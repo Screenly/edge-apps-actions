@@ -17,20 +17,35 @@ runs:
 
     - name: Install dependencies
       shell: bash
-      run: bun install --frozen-lockfile
+      run: |
+        echo "::group::Install dependencies"
+        bun install --frozen-lockfile
+        echo "::endgroup::"
 
     - name: Check formatting
       shell: bash
-      run: bun run format:check
+      run: |
+        echo "::group::Check formatting"
+        bun run format:check
+        echo "::endgroup::"
 
     - name: Lint
       shell: bash
-      run: bun run lint
+      run: |
+        echo "::group::Lint"
+        bun run lint
+        echo "::endgroup::"
 
     - name: Build
       shell: bash
-      run: bun run build
+      run: |
+        echo "::group::Build"
+        bun run build
+        echo "::endgroup::"
 
     - name: Test
       shell: bash
-      run: bun run test
+      run: |
+        echo "::group::Test"
+        bun run test
+        echo "::endgroup::"
