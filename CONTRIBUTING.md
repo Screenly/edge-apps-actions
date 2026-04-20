@@ -7,19 +7,29 @@ We welcome contributions from the community! To keep the codebase healthy and ch
 ### Contributors
 
 1. Fork the repository on GitHub.
-2. Clone your fork and create a branch off `main`:
+2. Clone your fork locally:
    ```sh
+   git clone https://github.com/<your-username>/edge-apps-actions.git
+   cd edge-apps-actions
+   ```
+3. Add the upstream remote so you can sync with the original repository:
+   ```sh
+   git remote add upstream https://github.com/Screenly/edge-apps-actions.git
+   ```
+4. Create a branch off an up-to-date `main`:
+   ```sh
+   git fetch upstream
    git checkout main
-   git pull  # ensure your local main is up to date before branching
+   git merge upstream/main  # sync your local main with upstream before branching
    git checkout -b your-feature-branch
    ```
-3. Make your changes, commit them, and push:
+5. Make your changes, commit them, and push:
    ```sh
    git add .
    git commit -m "Describe your change"
    git push -u origin your-feature-branch
    ```
-4. Open a pull request against `Screenly/edge-apps-actions@main`.
+6. Open a pull request against `Screenly/edge-apps-actions@main`.
 
 ### Maintainers
 
@@ -47,7 +57,7 @@ This repo follows the GitHub Actions tagging convention: **both** a fixed (immut
 
 ### Pushing tags
 
-After merging to `main`, pull the latest and tag the release:
+After merging to `main`, pull the latest and tag the release. Replace `v1.0.0` and `v1` with the actual version you are releasing:
 
 ```sh
 git checkout main
