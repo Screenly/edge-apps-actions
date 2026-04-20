@@ -22,7 +22,11 @@ We welcome contributions from the community! To keep the codebase healthy and ch
    git checkout -b your-feature-branch
    git push -u origin your-feature-branch
    ```
-2. Make your changes and commit them.
+2. Make your changes, commit them, and push the branch:
+   ```sh
+   git add .
+   git commit -m "Describe your change"
+   git push
 3. Open a pull request against `main`.
 4. Once merged, tag the release (see below).
 
