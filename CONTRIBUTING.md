@@ -9,24 +9,32 @@ We welcome contributions from the community! To keep the codebase healthy and ch
 1. Fork the repository on GitHub.
 2. Clone your fork and create a branch off `main`:
    ```sh
+   git checkout main
+   git pull  # ensure your local main is up to date before branching
    git checkout -b your-feature-branch
+   ```
+3. Make your changes, commit them, and push:
+   ```sh
+   git add .
+   git commit -m "Describe your change"
    git push -u origin your-feature-branch
    ```
-3. Make your changes and commit them.
 4. Open a pull request against `Screenly/edge-apps-actions@main`.
 
 ### Maintainers
 
 1. Create a branch off `main`:
    ```sh
+   git checkout main
+   git pull  # ensure your local main is up to date before branching
    git checkout -b your-feature-branch
-   git push -u origin your-feature-branch
    ```
-2. Make your changes, commit them, and push the branch:
+2. Make your changes, commit them, and push:
    ```sh
    git add .
    git commit -m "Describe your change"
-   git push
+   git push -u origin your-feature-branch
+   ```
 3. Open a pull request against `main`.
 4. Once merged, tag the release (see below).
 
@@ -56,7 +64,7 @@ git push origin v1.0.0
 git push origin v1 --force
 ```
 
-> `--force` is required when updating the floating tag because it moves an existing tag to a new commit.
+> `--force` is required when updating the floating tag because it moves an existing tag to a new commit. A tag ruleset on `v*` ensures only authorized maintainers can do this. Always verify you are on the correct commit before tagging.
 
 ### When to bump versions
 
