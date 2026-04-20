@@ -1,0 +1,36 @@
+name: Edge App Checks
+description: Builds, lints, formats, and tests a Screenly Edge App.
+
+inputs:
+  bun-version:
+    description: Bun version to use
+    required: false
+    default: latest
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: ${{ inputs.bun-version }}
+
+    - name: Install dependencies
+      shell: bash
+      run: bun install --frozen-lockfile
+
+    - name: Check formatting
+      shell: bash
+      run: bun run format:check
+
+    - name: Lint
+      shell: bash
+      run: bun run lint
+
+    - name: Build
+      shell: bash
+      run: bun run build
+
+    - name: Test
+      shell: bash
+      run: bun run test
