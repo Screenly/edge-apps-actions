@@ -35,8 +35,12 @@ runs:
         echo "has_build_step=$HAS_BUILD_STEP" >> "$GITHUB_OUTPUT"
 
         if [ "${{ inputs.environment }}" = "stage" ]; then
+          echo "MANIFEST_FILE_NAME=screenly_qc.yml" >> "$GITHUB_ENV"
+          echo "API_BASE_URL=https://api.screenlyappstage.com" >> "$GITHUB_ENV"
           echo "manifest_file=screenly_qc.yml" >> "$GITHUB_OUTPUT"
         else
+          echo "MANIFEST_FILE_NAME=screenly.yml" >> "$GITHUB_ENV"
+          echo "API_BASE_URL=https://api.screenlyapp.com" >> "$GITHUB_ENV"
           echo "manifest_file=screenly.yml" >> "$GITHUB_OUTPUT"
         fi
 
