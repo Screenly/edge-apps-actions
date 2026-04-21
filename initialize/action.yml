@@ -1,0 +1,84 @@
+name: Initialize Edge App
+description: Creates and deploys a new Screenly Edge App instance.
+
+inputs:
+  screenly_api_token:
+    description: Screenly API token
+    required: true
+  edge_app_name:
+    description: Edge App name (used for the CLI --name flag)
+    required: true
+  edge_app_title:
+    description: Display title for the Edge App instance
+    required: true
+  environment:
+    description: Target environment (stage or production)
+    required: true
+    default: stage
+
+runs:
+  using: composite
+  steps:
+    - name: Detect build system
+      id: detect
+      shell: bash
+      run: |
+        HAS_BUILD_STEP=false
+
+        if [ -f "package.json" ]; then
+          SCREENLY_DEP=$(jq -r '.devDependencies["@screenly/edge-apps"] // empty' package.json)
+          if [ -n "$SCREENLY_DEP" ]; then
+            HAS_BUILD_STEP=true
+          fi
+        fi
+
+        echo "has_build_step=$HAS_BUILD_STEP" >> "$GITHUB_OUTPUT"
+
+        if [ "${{ inputs.environment }}" = "stage" ]; then
+          echo "manifest_file=screenly_qc.yml" >> "$GITHUB_OUTPUT"
+        else
+          echo "manifest_file=screenly.yml" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Set up Bun
+      if: steps.detect.outputs.has_build_step == 'true'
+      uses: oven-sh/setup-bun@v2
+
+    - name: Install dependencies and build
+      if: steps.detect.outputs.has_build_step == 'true'
+      shell: bash
+      run: |
+        bun install --frozen-lockfile
+        bun run build
+
+    - name: Create Edge App
+      uses: screenly/cli@master
+      with:
+        screenly_api_token: ${{ inputs.screenly_api_token }}
+        cli_commands: edge-app create --name="${{ inputs.edge_app_name }}" --in-place
+
+    - name: Deploy Edge App
+      uses: screenly/cli@master
+      with:
+        screenly_api_token: ${{ inputs.screenly_api_token }}
+        cli_commands: edge-app deploy${{ steps.detect.outputs.has_build_step == 'true' && ' --path="./dist"' || '' }}
+
+    - name: Log manifest file
+      shell: bash
+      run: cat ${{ steps.detect.outputs.manifest_file }}
+
+    - name: Create Instance
+      uses: screenly/cli@master
+      with:
+        screenly_api_token: ${{ inputs.screenly_api_token }}
+        cli_commands: edge-app instance create --name="${{ inputs.edge_app_title }}"
+
+    - name: Update Instance
+      uses: screenly/cli@master
+      with:
+        screenly_api_token: ${{ inputs.screenly_api_token }}
+        cli_commands: edge-app instance update
+
+    - name: Log instance.yml
+      shell: bash
+      run: cat instance.yml
