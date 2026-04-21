@@ -52,36 +52,36 @@ We welcome contributions from the community! To keep the codebase healthy and ch
 
 This repo follows the GitHub Actions tagging convention: **both** a fixed (immutable) version tag and a floating major tag must be pushed for every release.
 
-- **Fixed tag** (`v1.0.0`): immutable, points to a specific commit forever. Consumers who want a pinned, reproducible version use this.
-- **Floating tag** (`v1`): moves with each release in the same major version. Consumers who reference `@v1` in their workflows always get the latest stable release within that major. **Both tags are required.**
+- **Fixed tag** (`vX.Y.Z`): immutable, points to a specific commit forever. Consumers who want a pinned, reproducible version use this.
+- **Floating tag** (`vX`): moves with each release in the same major version. Consumers who reference `@vX` in their workflows always get the latest stable release within that major. **Both tags are required.**
 
 ### Pushing tags
 
-After merging to `main`, pull the latest and tag the release. Replace `v1.0.0` and `v1` with the actual version you are releasing:
+After merging to `main`, pull the latest and tag the release. Replace `vX.Y.Z` and `vX` with the actual version you are releasing:
 
 ```sh
 git checkout main
 git pull
 
 # Create the fixed tag
-git tag v1.0.0
+git tag vX.Y.Z
 
 # Create or update the floating major tag
-git tag -f v1
+git tag -f vX
 
 # Push both
-git push origin v1.0.0
-git push origin v1 --force
+git push origin vX.Y.Z
+git push origin vX --force
 ```
 
 > `--force` is required when updating the floating tag because it moves an existing tag to a new commit. A tag ruleset on `v*` ensures only authorized maintainers can do this. Always verify you are on the correct commit before tagging.
 
 ### When to bump versions
 
-| Change type | Example | Version bump |
-|---|---|---|
-| Patch | Bug fix, minor tweak | `v1.0.0` → `v1.0.1` |
-| Minor | New optional input, new action | `v1.0.0` → `v1.1.0` |
-| Major | Breaking change to inputs/behavior | `v1.x.x` → `v2.0.0` |
+| Change type | Example                            | Version bump            |
+| ----------- | ---------------------------------- | ----------------------- |
+| Patch       | Bug fix, minor tweak               | `vX.Y.Z` → `vX.Y.(Z+1)` |
+| Minor       | New optional input, new action     | `vX.Y.Z` → `vX.(Y+1).0` |
+| Major       | Breaking change to inputs/behavior | `vX.Y.Z` → `v(X+1).0.0` |
 
-For major bumps, introduce a new floating tag (e.g. `v2`) and stop updating the old one.
+For major bumps, introduce a new floating tag for the next major version (for example, `v2` after `v1`) and stop updating the old one.
