@@ -78,10 +78,10 @@ git push origin vX --force
 
 ### When to bump versions
 
-| Change type | Example                            | Version bump          |
-| ----------- | ---------------------------------- | --------------------- |
-| Patch       | Bug fix, minor tweak               | `vX.Y.Z` → `vX.Y.Z+1` |
-| Minor       | New optional input, new action     | `vX.Y.Z` → `vX.Y+1.0` |
-| Major       | Breaking change to inputs/behavior | `vX.Y.Z` → `vX+1.0.0` |
+| Change type | Example                            | Version bump            |
+| ----------- | ---------------------------------- | ----------------------- |
+| Patch       | Bug fix, minor tweak               | `vX.Y.Z` → `vX.Y.(Z+1)` |
+| Minor       | New optional input, new action     | `vX.Y.Z` → `vX.(Y+1).0` |
+| Major       | Breaking change to inputs/behavior | `vX.Y.Z` → `v(X+1).0.0` |
 
-For major bumps, introduce a new floating tag (e.g. `vX+1`) and stop updating the old one.
+For major bumps, introduce a new floating tag for the next major version (for example, `v2` after `v1`) and stop updating the old one.
