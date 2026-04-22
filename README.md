@@ -38,8 +38,18 @@ Creates and deploys a new Screenly Edge App instance.
 | `edge_app_title`     | Display title for the Edge App instance        | Yes      |         |
 | `environment`        | Target environment (`stage` or `production`)   | No       | `stage` |
 
-## Planned Actions
+### `update`
 
-The following actions are planned for future implementation:
+Builds and deploys an existing Screenly Edge App.
 
-- **`update/`**: Updates an existing Screenly Edge App
+```yaml
+- uses: Screenly/edge-apps-actions/update@v1
+  with:
+    screenly_api_token: ${{ secrets.SCREENLY_API_TOKEN }}
+    environment: stage # optional, defaults to stage
+```
+
+| Input                | Description                                  | Required | Default |
+| -------------------- | -------------------------------------------- | -------- | ------- |
+| `screenly_api_token` | Screenly API token                           | Yes      |         |
+| `environment`        | Target environment (`stage` or `production`) | No       | `stage` |
