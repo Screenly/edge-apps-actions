@@ -41,7 +41,7 @@ runs:
       run: |
         STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
           -H "Authorization: Token ${{ inputs.screenly_api_token }}" \
-          "https://api.screenlyapp.com/api/v4.1/users/")
+          "$API_BASE_URL/api/v4.1/users/")
         echo "Auth check status: $STATUS"
         if [ "$STATUS" != "200" ]; then
           echo "Token validation failed (HTTP $STATUS)"
