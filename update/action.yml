@@ -40,6 +40,10 @@ runs:
       shell: bash
       run: |
         STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+          --connect-timeout 10 \
+          --max-time 30 \
+          --retry 3 \
+          --retry-delay 2 \
           -H "Authorization: Token ${{ inputs.screenly_api_token }}" \
           "$API_BASE_URL/api/v4.1/users/")
         echo "Auth check status: $STATUS"
@@ -49,11 +53,15 @@ runs:
         fi
         echo "Token is valid"
 
-    - name: List Edge Apps
+    - name: List Edge App names
+      id: list-edge-apps
       uses: screenly/cli@master
       with:
         screenly_api_token: ${{ inputs.screenly_api_token }}
-        cli_commands: edge-app list
+        cli_commands: edge-app list --json
+    - name: Extract Edge App names
+      shell: bash
+      run: echo '${{ steps.list-edge-apps.outputs.cli_commands_response }}' | jq '[.[].name]'
 
     - name: Set up Bun
       if: steps.detect.outputs.has_build_step == 'true'
