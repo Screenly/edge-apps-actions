@@ -47,9 +47,11 @@ Builds and deploys an existing Screenly Edge App.
   with:
     screenly_api_token: ${{ secrets.SCREENLY_API_TOKEN }}
     environment: stage # optional, defaults to stage
+    delete_missing_settings: false # optional, defaults to false
 ```
 
-| Input                | Description                                  | Required | Default |
-| -------------------- | -------------------------------------------- | -------- | ------- |
-| `screenly_api_token` | Screenly API token                           | Yes      |         |
-| `environment`        | Target environment (`stage` or `production`) | No       | `stage` |
+| Input                     | Description                                                      | Required | Default |
+| ------------------------- | ---------------------------------------------------------------- | -------- | ------- |
+| `screenly_api_token`      | Screenly API token                                               | Yes      |         |
+| `environment`             | Target environment (`stage` or `production`)                     | No       | `stage` |
+| `delete_missing_settings` | Delete settings that exist on the server but not in the manifest | No       | `false` |
