@@ -37,6 +37,7 @@ Creates and deploys a new Screenly Edge App instance.
 | `edge_app_name`      | Edge App name (used for the CLI `--name` flag) | Yes      |         |
 | `edge_app_title`     | Display title for the Edge App instance        | Yes      |         |
 | `environment`        | Target environment (`stage` or `production`)   | No       | `stage` |
+| `path`               | Path to the Edge App directory                 | No       | `.`     |
 
 ### `update`
 
@@ -55,3 +56,4 @@ Builds and deploys an existing Screenly Edge App.
 | `screenly_api_token`      | Screenly API token                                               | Yes      |         |
 | `environment`             | Target environment (`stage` or `production`)                     | No       | `stage` |
 | `delete_missing_settings` | Delete settings that exist on the server but not in the manifest | No       | `false` |
+| `path`                    | Path to the Edge App directory                                   | No       | `.`     |
