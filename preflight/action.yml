@@ -1,0 +1,55 @@
+name: Edge App Preflight Check
+description: Installs yq and checks the manifest file for the target environment.
+
+inputs:
+  environment:
+    description: Target environment (stage or production)
+    required: true
+  mode:
+    description: Action mode (initialize or update)
+    required: true
+
+outputs:
+  should_skip:
+    description: Set to 'true' if remaining steps should be skipped
+    value: ${{ steps.check.outputs.should_skip }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install yq
+      shell: bash
+      run: |
+        wget https://github.com/mikefarah/yq/releases/download/v4.53.2/yq_linux_amd64 \
+          -O /usr/local/bin/yq && chmod +x /usr/local/bin/yq
+
+    - name: Check manifest
+      id: check
+      shell: bash
+      run: |
+        if [ "${{ inputs.environment }}" = "stage" ]; then
+          MANIFEST_FILE="screenly_qc.yml"
+        else
+          MANIFEST_FILE="screenly.yml"
+        fi
+
+        SHOULD_SKIP=false
+
+        if [ "${{ inputs.mode }}" = "update" ]; then
+          if [ ! -f "$MANIFEST_FILE" ]; then
+            echo "Manifest file '$MANIFEST_FILE' not found. Skipping deployment."
+            SHOULD_SKIP=true
+          elif [ -z "$(yq '.id' "$MANIFEST_FILE")" ] || [ "$(yq '.id' "$MANIFEST_FILE")" = "null" ]; then
+            echo "Manifest file '$MANIFEST_FILE' has no 'id' field. Skipping deployment."
+            SHOULD_SKIP=true
+          fi
+        elif [ "${{ inputs.mode }}" = "initialize" ]; then
+          if [ -f "$MANIFEST_FILE" ] && \
+             [ -n "$(yq '.id' "$MANIFEST_FILE")" ] && \
+             [ "$(yq '.id' "$MANIFEST_FILE")" != "null" ]; then
+            echo "Manifest file '$MANIFEST_FILE' already has an 'id'. App is already initialized. Skipping."
+            SHOULD_SKIP=true
+          fi
+        fi
+
+        echo "should_skip=$SHOULD_SKIP" >> "$GITHUB_OUTPUT"
