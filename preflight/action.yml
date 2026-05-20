@@ -20,8 +20,10 @@ runs:
     - name: Install yq
       shell: bash
       run: |
+        mkdir -p "$RUNNER_TEMP/bin"
         wget https://github.com/mikefarah/yq/releases/download/v4.53.2/yq_linux_amd64 \
-          -O /usr/local/bin/yq && chmod +x /usr/local/bin/yq
+          -O "$RUNNER_TEMP/bin/yq" && chmod +x "$RUNNER_TEMP/bin/yq"
+        echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
 
     - name: Check manifest
       id: check
