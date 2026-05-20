@@ -21,7 +21,7 @@ runs:
   steps:
     - name: Preflight check
       id: preflight
-      uses: screenly/edge-apps-actions/preflight@v1
+      uses: ../preflight
       with:
         environment: ${{ inputs.environment }}
         mode: initialize
