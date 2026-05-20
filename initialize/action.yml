@@ -21,7 +21,7 @@ runs:
   steps:
     - name: Preflight check
       id: preflight
-      uses: ../preflight
+      uses: ./preflight
       with:
         environment: ${{ inputs.environment }}
         mode: initialize
