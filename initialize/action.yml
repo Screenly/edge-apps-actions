@@ -19,8 +19,16 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Preflight check
+      id: preflight
+      uses: ./preflight
+      with:
+        environment: ${{ inputs.environment }}
+        mode: initialize
+
     - name: Detect build system
       id: detect
+      if: steps.preflight.outputs.should_skip != 'true'
       shell: bash
       run: |
         HAS_BUILD_STEP=false
@@ -43,47 +51,53 @@ runs:
         fi
 
     - name: Set up Bun
-      if: steps.detect.outputs.has_build_step == 'true'
+      if: steps.preflight.outputs.should_skip != 'true' && steps.detect.outputs.has_build_step == 'true'
       uses: oven-sh/setup-bun@v2
 
     - name: Install dependencies
-      if: steps.detect.outputs.has_build_step == 'true'
+      if: steps.preflight.outputs.should_skip != 'true' && steps.detect.outputs.has_build_step == 'true'
       shell: bash
       run: bun install --frozen-lockfile
 
     - name: Create Edge App
+      if: steps.preflight.outputs.should_skip != 'true'
       uses: screenly/cli@master
       with:
         screenly_api_token: ${{ inputs.screenly_api_token }}
         cli_commands: edge-app create --name="${{ inputs.edge_app_name }}" --in-place
 
     - name: Build
-      if: steps.detect.outputs.has_build_step == 'true'
+      if: steps.preflight.outputs.should_skip != 'true' && steps.detect.outputs.has_build_step == 'true'
       shell: bash
       run: bun run build
 
     - name: Deploy Edge App
+      if: steps.preflight.outputs.should_skip != 'true'
       uses: screenly/cli@master
       with:
         screenly_api_token: ${{ inputs.screenly_api_token }}
         cli_commands: edge-app deploy${{ steps.detect.outputs.has_build_step == 'true' && ' --path="./dist"' || '' }}
 
     - name: Log manifest file
+      if: steps.preflight.outputs.should_skip != 'true'
       shell: bash
       run: cat $MANIFEST_FILE_NAME
 
     - name: Create Instance
+      if: steps.preflight.outputs.should_skip != 'true'
       uses: screenly/cli@master
       with:
         screenly_api_token: ${{ inputs.screenly_api_token }}
         cli_commands: edge-app instance create --name="${{ inputs.edge_app_title }}"
 
     - name: Update Instance
+      if: steps.preflight.outputs.should_skip != 'true'
       uses: screenly/cli@master
       with:
         screenly_api_token: ${{ inputs.screenly_api_token }}
         cli_commands: edge-app instance update
 
     - name: Log instance.yml
+      if: steps.preflight.outputs.should_skip != 'true'
       shell: bash
       run: cat instance.yml
