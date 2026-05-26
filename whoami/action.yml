@@ -18,13 +18,15 @@ runs:
       run: |
         set -euo pipefail
         current_user=$(
-          curl -fsSL -H "Authorization: Token ${{ inputs.screenly_api_token }}" \
+          curl -fsSL --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 2 \
+            -H "Authorization: Token ${{ inputs.screenly_api_token }}" \
             "${{ inputs.api_base_url }}/api/v4.1/users" \
             | jq -r '.[0] | "\(.first_name) \(.last_name) <\(.email)>"'
         )
         echo "Current user: ${current_user}"
         current_team=$(
-          curl -fsSL -H "Authorization: Token ${{ inputs.screenly_api_token }}" \
+          curl -fsSL --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 2 \
+            -H "Authorization: Token ${{ inputs.screenly_api_token }}" \
             "${{ inputs.api_base_url }}/api/v4.1/teams" \
             | jq -r '.[] | select(.is_current == true)
                     | "\(.name) (\(.domain))"'
