@@ -46,13 +46,13 @@ Logs the current Screenly user and team. Useful as a pre-flight step in deployme
 - uses: Screenly/edge-apps-actions/whoami@v1
   with:
     screenly_api_token: ${{ secrets.SCREENLY_API_TOKEN }}
-    api_base_url: ${{ vars.API_BASE_URL }}
+    environment: stage # optional, defaults to stage
 ```
 
-| Input                | Description            | Required | Default                          |
-| -------------------- | ---------------------- | -------- | -------------------------------- |
-| `screenly_api_token` | Screenly API token     | Yes      |                                  |
-| `api_base_url`       | Screenly API base URL  | No       | `https://api.screenlyapp.com`    |
+| Input                | Description                                  | Required | Default |
+| -------------------- | -------------------------------------------- | -------- | ------- |
+| `screenly_api_token` | Screenly API token                           | Yes      |         |
+| `environment`        | Target environment (`stage` or `production`) | No       | `stage` |
 
 ### `update`
 

@@ -32,6 +32,9 @@ runs:
 
         echo "has_build_step=$HAS_BUILD_STEP" >> "$GITHUB_OUTPUT"
 
+        # TODO: The staging URL should not be hardcoded here. Consider passing
+        # it as a secret or repository variable instead. This pattern already
+        # exists in the other actions and should be addressed holistically.
         if [ "${{ inputs.environment }}" = "stage" ]; then
           echo "MANIFEST_FILE_NAME=screenly_qc.yml" >> "$GITHUB_ENV"
           echo "API_BASE_URL=https://api.screenlyappstage.com" >> "$GITHUB_ENV"
