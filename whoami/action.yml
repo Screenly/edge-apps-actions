@@ -5,30 +5,76 @@ inputs:
   screenly_api_token:
     description: Screenly API token
     required: true
-  api_base_url:
-    description: Screenly API base URL
+  environment:
+    description: Target environment (stage or production)
     required: false
-    default: https://api.screenlyapp.com
+    default: stage
 
 runs:
   using: composite
   steps:
     - name: Screenly API whoami
       shell: bash
+      env:
+        SCREENLY_API_TOKEN: ${{ inputs.screenly_api_token }}
+        ENVIRONMENT: ${{ inputs.environment }}
       run: |
         set -euo pipefail
+
+        # TODO: The staging URL should not be hardcoded here. Consider passing
+        # it as a secret or repository variable instead. This pattern already
+        # exists in the other actions and should be addressed holistically.
+        if [ "${ENVIRONMENT}" = "stage" ]; then
+          API_BASE_URL="https://api.screenlyappstage.com"
+        else
+          API_BASE_URL="https://api.screenlyapp.com"
+        fi
+
+        # Fetch current user
+        user_response=$(
+          curl -sSL --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 2 \
+            -w "\n%{http_code}" \
+            -H "Authorization: Token ${SCREENLY_API_TOKEN}" \
+            "${API_BASE_URL}/api/v4.1/users"
+        )
+        user_http_code=$(echo "${user_response}" | tail -n 1)
+        user_body=$(echo "${user_response}" | head -n -1)
+        if [ "${user_http_code}" != "200" ]; then
+          echo "Error: /api/v4.1/users returned HTTP ${user_http_code}"
+          echo "Response: ${user_body}"
+          exit 1
+        fi
         current_user=$(
-          curl -fsSL --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 2 \
-            -H "Authorization: Token ${{ inputs.screenly_api_token }}" \
-            "${{ inputs.api_base_url }}/api/v4.1/users" \
-            | jq -r '.[0] | "\(.first_name) \(.last_name) <\(.email)>"'
-        )
+          echo "${user_body}" \
+            | jq -r '.[0] // error("no user in response") | "\(.first_name) \(.last_name) <\(.email)>"'
+        ) || {
+          echo "Error: failed to parse user. Response: ${user_body}"
+          exit 1
+        }
         echo "Current user: ${current_user}"
-        current_team=$(
-          curl -fsSL --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 2 \
-            -H "Authorization: Token ${{ inputs.screenly_api_token }}" \
-            "${{ inputs.api_base_url }}/api/v4.1/teams" \
-            | jq -r '.[] | select(.is_current == true)
-                    | "\(.name) (\(.domain))"'
+
+        # Fetch current team
+        team_response=$(
+          curl -sSL --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 2 \
+            -w "\n%{http_code}" \
+            -H "Authorization: Token ${SCREENLY_API_TOKEN}" \
+            "${API_BASE_URL}/api/v4.1/teams"
         )
+        team_http_code=$(echo "${team_response}" | tail -n 1)
+        team_body=$(echo "${team_response}" | head -n -1)
+        if [ "${team_http_code}" != "200" ]; then
+          echo "Error: /api/v4.1/teams returned HTTP ${team_http_code}"
+          echo "Response: ${team_body}"
+          exit 1
+        fi
+        current_team=$(
+          echo "${team_body}" \
+            | jq -r '[.[] | select(.is_current == true)]
+                    | if length == 0 then error("no current team in response")
+                      else .[0] | "\(.name) (\(.domain))"
+                      end'
+        ) || {
+          echo "Error: failed to parse team. Response: ${team_body}"
+          exit 1
+        }
         echo "Current team: ${current_team}"
