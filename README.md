@@ -38,6 +38,22 @@ Creates and deploys a new Screenly Edge App instance.
 | `edge_app_title`     | Display title for the Edge App instance        | Yes      |         |
 | `environment`        | Target environment (`stage` or `production`)   | No       | `stage` |
 
+### `whoami`
+
+Logs the current Screenly user and team. Useful as a pre-flight step in deployment workflows to confirm which account and team the API token belongs to.
+
+```yaml
+- uses: Screenly/edge-apps-actions/whoami@v1
+  with:
+    screenly_api_token: ${{ secrets.SCREENLY_API_TOKEN }}
+    environment: stage # optional, defaults to stage
+```
+
+| Input                | Description                                  | Required | Default |
+| -------------------- | -------------------------------------------- | -------- | ------- |
+| `screenly_api_token` | Screenly API token                           | Yes      |         |
+| `environment`        | Target environment (`stage` or `production`) | No       | `stage` |
+
 ### `update`
 
 Builds and deploys an existing Screenly Edge App.
