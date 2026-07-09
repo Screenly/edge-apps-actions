@@ -26,7 +26,7 @@ runs:
         HAS_BUILD_STEP=false
 
         if [ -f "package.json" ]; then
-          SCREENLY_DEP=$(jq -r '.devDependencies["@screenly/edge-apps"] // empty' package.json)
+          SCREENLY_DEP=$(jq -r '((.dependencies // {}) + (.devDependencies // {}))["@screenly/edge-apps"] // empty' package.json)
           if [ -n "$SCREENLY_DEP" ]; then
             HAS_BUILD_STEP=true
           fi
