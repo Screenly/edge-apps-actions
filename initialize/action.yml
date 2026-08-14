@@ -33,6 +33,7 @@ runs:
         fi
 
         echo "has_build_step=$HAS_BUILD_STEP" >> "$GITHUB_OUTPUT"
+        echo "CLI_VERSION=v1.2.1" >> "$GITHUB_ENV"
 
         if [ "${{ inputs.environment }}" = "stage" ]; then
           echo "MANIFEST_FILE_NAME=screenly_qc.yml" >> "$GITHUB_ENV"
@@ -56,6 +57,7 @@ runs:
       with:
         screenly_api_token: ${{ inputs.screenly_api_token }}
         cli_commands: edge-app create --name="${{ inputs.edge_app_name }}" --in-place
+        cli_version: ${{ env.CLI_VERSION }}
 
     - name: Build
       if: steps.detect.outputs.has_build_step == 'true'
@@ -67,6 +69,7 @@ runs:
       with:
         screenly_api_token: ${{ inputs.screenly_api_token }}
         cli_commands: edge-app deploy${{ steps.detect.outputs.has_build_step == 'true' && ' --path="./dist"' || '' }}
+        cli_version: ${{ env.CLI_VERSION }}
 
     - name: Log manifest file
       shell: bash
@@ -77,12 +80,14 @@ runs:
       with:
         screenly_api_token: ${{ inputs.screenly_api_token }}
         cli_commands: edge-app instance create --name="${{ inputs.edge_app_title }}"
+        cli_version: ${{ env.CLI_VERSION }}
 
     - name: Update Instance
       uses: screenly/cli@master
       with:
         screenly_api_token: ${{ inputs.screenly_api_token }}
         cli_commands: edge-app instance update
+        cli_version: ${{ env.CLI_VERSION }}
 
     - name: Log instance.yml
       shell: bash

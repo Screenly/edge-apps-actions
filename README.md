@@ -20,7 +20,7 @@ Builds, lints, formats, and tests a Screenly Edge App.
 
 ### `initialize`
 
-Creates and deploys a new Screenly Edge App instance.
+Creates and deploys a new Screenly Edge App instance. Pins Screenly CLI to `v1.2.1`.
 
 ```yaml
 - uses: Screenly/edge-apps-actions/initialize@v1
@@ -40,7 +40,7 @@ Creates and deploys a new Screenly Edge App instance.
 
 ### `update`
 
-Builds and deploys an existing Screenly Edge App.
+Builds and deploys an existing Screenly Edge App. Pins Screenly CLI to `v1.2.1`.
 
 ```yaml
 - uses: Screenly/edge-apps-actions/update@v1
