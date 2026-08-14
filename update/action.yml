@@ -13,6 +13,10 @@ inputs:
     description: Delete settings that exist on the server but not in the manifest (true or false)
     required: false
     default: 'false'
+  cli_version:
+    description: Screenly CLI version
+    required: false
+    default: v1.2.1
 
 runs:
   using: composite
@@ -76,6 +80,7 @@ runs:
       with:
         screenly_api_token: ${{ inputs.screenly_api_token }}
         cli_commands: edge-app deploy${{ steps.detect.outputs.has_build_step == 'true' && ' --path="./dist"' || '' }} --delete-missing-settings=${{ inputs.delete_missing_settings }}
+        cli_version: ${{ inputs.cli_version }}
 
     - name: Log manifest file
       shell: bash
