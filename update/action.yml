@@ -43,7 +43,7 @@ runs:
         echo "has_build_step=$HAS_BUILD_STEP" >> "$GITHUB_OUTPUT"
 
         if [ -n "$EDGE_APP_ID_INPUT" ]; then
-          delimiter="$(openssl rand -hex 8)"
+          delimiter="ghadelim_${RANDOM}${RANDOM}${RANDOM}_$$"
           echo "EDGE_APP_ID<<${delimiter}" >> "$GITHUB_ENV"
           echo "$EDGE_APP_ID_INPUT" >> "$GITHUB_ENV"
           echo "${delimiter}" >> "$GITHUB_ENV"
