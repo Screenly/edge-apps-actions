@@ -13,6 +13,14 @@ inputs:
     description: Delete settings that exist on the server but not in the manifest (true or false)
     required: false
     default: 'false'
+  edge_app_id:
+    description: >
+      Edge App ID for this environment. When provided, it's exported as
+      EDGE_APP_ID and takes precedence over any id in screenly.yml/screenly_qc.yml;
+      the manifest file is not branched by environment in that case. When
+      omitted, behavior is unchanged from before this input existed.
+    required: false
+    default: ""
 
 runs:
   using: composite
@@ -20,6 +28,8 @@ runs:
     - name: Detect build system
       id: detect
       shell: bash
+      env:
+        EDGE_APP_ID_INPUT: ${{ inputs.edge_app_id }}
       run: |
         HAS_BUILD_STEP=false
 
@@ -32,11 +42,21 @@ runs:
 
         echo "has_build_step=$HAS_BUILD_STEP" >> "$GITHUB_OUTPUT"
 
-        if [ "${{ inputs.environment }}" = "stage" ]; then
+        if [ -n "$EDGE_APP_ID_INPUT" ]; then
+          delimiter="ghadelim_${RANDOM}${RANDOM}${RANDOM}_$$"
+          echo "EDGE_APP_ID<<${delimiter}" >> "$GITHUB_ENV"
+          echo "$EDGE_APP_ID_INPUT" >> "$GITHUB_ENV"
+          echo "${delimiter}" >> "$GITHUB_ENV"
+          echo "MANIFEST_FILE_NAME=screenly.yml" >> "$GITHUB_ENV"
+        elif [ "${{ inputs.environment }}" = "stage" ]; then
           echo "MANIFEST_FILE_NAME=screenly_qc.yml" >> "$GITHUB_ENV"
-          echo "API_BASE_URL=https://api.screenlyappstage.com" >> "$GITHUB_ENV"
         else
           echo "MANIFEST_FILE_NAME=screenly.yml" >> "$GITHUB_ENV"
+        fi
+
+        if [ "${{ inputs.environment }}" = "stage" ]; then
+          echo "API_BASE_URL=https://api.screenlyappstage.com" >> "$GITHUB_ENV"
+        else
           echo "API_BASE_URL=https://api.screenlyapp.com" >> "$GITHUB_ENV"
         fi
 
@@ -72,9 +92,10 @@ runs:
       run: bun run build
 
     - name: Deploy Edge App
-      uses: screenly/cli@master
+      uses: screenly/cli@v26.9.0
       with:
         screenly_api_token: ${{ inputs.screenly_api_token }}
+        cli_version: v26.9.0
         cli_commands: edge-app deploy${{ steps.detect.outputs.has_build_step == 'true' && ' --path="./dist"' || '' }} --delete-missing-settings=${{ inputs.delete_missing_settings }}
 
     - name: Log manifest file
