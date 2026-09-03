@@ -50,38 +50,30 @@ We welcome contributions from the community! To keep the codebase healthy and ch
 
 ## Tagging and Releases
 
-This repo follows the GitHub Actions tagging convention: **both** a fixed (immutable) version tag and a floating major tag must be pushed for every release.
+This repo follows [Calendar Versioning](https://calver.org/) using a `YY.M.PATCH` scheme (e.g. `v26.8.0`), a SemVer-compatible variant of CalVer: `YY` is the last two digits of the year, `M` is the month (both non-zero-padded, e.g. `8` for August, not `08`), and `PATCH` resets to `0` for the first release of a given year/month and increments for any additional release within that same month. Git tags are always `v`-prefixed (e.g. `v26.8.0`).
 
-- **Fixed tag** (`vX.Y.Z`): immutable, points to a specific commit forever. Consumers who want a pinned, reproducible version use this.
-- **Floating tag** (`vX`): moves with each release in the same major version. Consumers who reference `@vX` in their workflows always get the latest stable release within that major. **Both tags are required.**
+Only a **fixed (immutable)** tag is pushed per release, no floating tag is created or moved. Every consumer pins an exact `vYY.M.PATCH` in their workflow and bumps it deliberately when they want a newer release; nothing changes underneath them without an explicit edit on their side.
+
+> **Legacy `v1` tag:** this repo previously followed SemVer with a floating `v1` major tag that moved with every release. `v1` now stays frozen at its last SemVer-era commit and will **not** be updated again. Existing consumers pinned to `@v1` are unaffected and keep working, but they will not receive any future fixes or features, those only ship under new `vYY.M.PATCH` tags. If you're setting up a new workflow, or maintain one still on `@v1`, pin an explicit `vYY.M.PATCH` instead.
 
 ### Pushing tags
 
-After merging to `main`, pull the latest and tag the release. Replace `vX.Y.Z` and `vX` with the actual version you are releasing:
+After merging to `main`, pull the latest and tag the release. Replace `vYY.M.PATCH` with the version you are releasing:
 
 ```sh
 git checkout main
 git pull
 
-# Create the fixed tag
-git tag vX.Y.Z
-
-# Create or update the floating major tag
-git tag -f vX
-
-# Push both
-git push origin vX.Y.Z
-git push origin vX --force
+git tag vYY.M.PATCH
+git push origin vYY.M.PATCH
 ```
-
-> `--force` is required when updating the floating tag because it moves an existing tag to a new commit. A tag ruleset on `v*` ensures only authorized maintainers can do this. Always verify you are on the correct commit before tagging.
 
 ### When to bump versions
 
-| Change type | Example                            | Version bump            |
-| ----------- | ---------------------------------- | ----------------------- |
-| Patch       | Bug fix, minor tweak               | `vX.Y.Z` → `vX.Y.(Z+1)` |
-| Minor       | New optional input, new action     | `vX.Y.Z` → `vX.(Y+1).0` |
-| Major       | Breaking change to inputs/behavior | `vX.Y.Z` → `v(X+1).0.0` |
+| Change type                               | Example               |
+| ------------------------------------------ | ---------------------- |
+| Another release in the same month          | `v26.8.0` → `v26.8.1` |
+| First release in a new month (same year)   | `v26.8.1` → `v26.9.0` |
+| First release in a new year                | `v26.9.0` → `v27.1.0` |
 
-For major bumps, introduce a new floating tag for the next major version (for example, `v2` after `v1`) and stop updating the old one.
+Version numbers no longer signal whether a change is breaking, since CalVer tracks release timing, not compatibility. Call out breaking changes explicitly in the release notes so consumers know to review before bumping their pin.
