@@ -28,6 +28,8 @@ runs:
     - name: Detect build system
       id: detect
       shell: bash
+      env:
+        EDGE_APP_ID_INPUT: ${{ inputs.edge_app_id }}
       run: |
         HAS_BUILD_STEP=false
 
@@ -40,10 +42,10 @@ runs:
 
         echo "has_build_step=$HAS_BUILD_STEP" >> "$GITHUB_OUTPUT"
 
-        if [ -n "${{ inputs.edge_app_id }}" ]; then
+        if [ -n "$EDGE_APP_ID_INPUT" ]; then
           delimiter="$(openssl rand -hex 8)"
           echo "EDGE_APP_ID<<${delimiter}" >> "$GITHUB_ENV"
-          echo "${{ inputs.edge_app_id }}" >> "$GITHUB_ENV"
+          echo "$EDGE_APP_ID_INPUT" >> "$GITHUB_ENV"
           echo "${delimiter}" >> "$GITHUB_ENV"
           echo "MANIFEST_FILE_NAME=screenly.yml" >> "$GITHUB_ENV"
         elif [ "${{ inputs.environment }}" = "stage" ]; then
@@ -90,7 +92,7 @@ runs:
       run: bun run build
 
     - name: Deploy Edge App
-      uses: screenly/cli@master
+      uses: screenly/cli@v26.9.0
       with:
         screenly_api_token: ${{ inputs.screenly_api_token }}
         cli_version: v26.9.0
