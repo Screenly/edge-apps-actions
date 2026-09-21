@@ -49,6 +49,9 @@ runs:
           echo "${delimiter}" >> "$GITHUB_ENV"
         fi
 
+        # TODO: The staging URL should not be hardcoded here. Consider passing
+        # it as a secret or repository variable instead. This pattern already
+        # exists in the other actions and should be addressed holistically.
         if [ "${{ inputs.environment }}" = "stage" ]; then
           echo "API_BASE_URL=https://api.screenlyappstage.com" >> "$GITHUB_ENV"
         else

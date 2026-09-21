@@ -42,6 +42,22 @@ Creates and deploys a new Screenly Edge App instance.
 
 Always uses `screenly.yml` for both stage and production (no `screenly_qc.yml`). When `edge_app_id` is provided, it's exported as `EDGE_APP_ID` and takes precedence over any `id` in the manifest. On first-time initialize, omit `edge_app_id` — create does not need an id beforehand. After create succeeds, store the printed id in the repo vars `STAGE_EDGE_APP_ID` / `PRODUCTION_EDGE_APP_ID` and pass those on later runs (especially `update`). Requires `screenly/cli` `v26.9.0` or later; see the [`v26.9.0` release notes](https://github.com/Screenly/cli/releases/tag/v26.9.0) for details.
 
+### `whoami`
+
+Logs the current Screenly user and team. Useful as a pre-flight step in deployment workflows to confirm which account and team the API token belongs to.
+
+```yaml
+- uses: Screenly/edge-apps-actions/whoami@v1
+  with:
+    screenly_api_token: ${{ secrets.SCREENLY_API_TOKEN }}
+    environment: stage # optional, defaults to stage
+```
+
+| Input                | Description                                  | Required | Default |
+| -------------------- | -------------------------------------------- | -------- | ------- |
+| `screenly_api_token` | Screenly API token                           | Yes      |         |
+| `environment`        | Target environment (`stage` or `production`) | No       | `stage` |
+
 ### `update`
 
 Builds and deploys an existing Screenly Edge App.
