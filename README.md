@@ -2,6 +2,17 @@
 
 Composite GitHub Actions for Screenly Edge Apps.
 
+## Example workflows
+
+Copy these into your app repo under `.github/workflows/`:
+
+- [`examples/initialize-edge-app.yml`](examples/initialize-edge-app.yml) — manual create/deploy for stage or production
+- [`examples/update-edge-app.yml`](examples/update-edge-app.yml) — deploy stage from `development`, production from `main`
+
+Branch names are only used in your workflow triggers (`on.push.branches` / `github.ref`). The actions themselves work the same on `main` or `master` — change the branch names in the example to match your repo.
+
+After the first successful initialize, store the printed Edge App id in repo variables `STAGE_EDGE_APP_ID` / `PRODUCTION_EDGE_APP_ID` and pass them as `edge_app_id` on later runs.
+
 ## Available Actions
 
 ### `checks`
