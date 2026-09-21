@@ -18,9 +18,9 @@ inputs:
   edge_app_id:
     description: >
       Edge App ID for this environment. When provided, it's exported as
-      EDGE_APP_ID and takes precedence over any id in screenly.yml/screenly_qc.yml;
-      the manifest file is not branched by environment in that case. When
-      omitted, behavior is unchanged from before this input existed.
+      EDGE_APP_ID and takes precedence over any id in screenly.yml. Always
+      uses screenly.yml (stage and production share one manifest). Omit on
+      first-time initialize — no id is required until after create.
     required: false
     default: ""
 
@@ -43,17 +43,13 @@ runs:
         fi
 
         echo "has_build_step=$HAS_BUILD_STEP" >> "$GITHUB_OUTPUT"
+        echo "MANIFEST_FILE_NAME=screenly.yml" >> "$GITHUB_ENV"
 
         if [ -n "$EDGE_APP_ID_INPUT" ]; then
           delimiter="ghadelim_${RANDOM}${RANDOM}${RANDOM}_$$"
           echo "EDGE_APP_ID<<${delimiter}" >> "$GITHUB_ENV"
           echo "$EDGE_APP_ID_INPUT" >> "$GITHUB_ENV"
           echo "${delimiter}" >> "$GITHUB_ENV"
-          echo "MANIFEST_FILE_NAME=screenly.yml" >> "$GITHUB_ENV"
-        elif [ "${{ inputs.environment }}" = "stage" ]; then
-          echo "MANIFEST_FILE_NAME=screenly_qc.yml" >> "$GITHUB_ENV"
-        else
-          echo "MANIFEST_FILE_NAME=screenly.yml" >> "$GITHUB_ENV"
         fi
 
         if [ "${{ inputs.environment }}" = "stage" ]; then
