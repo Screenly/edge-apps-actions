@@ -38,4 +38,5 @@ jobs:
           environment: ${{ inputs.environment }}
           # Omit on first create, or leave the var unset. After create, store the
           # printed id as STAGE_EDGE_APP_ID / PRODUCTION_EDGE_APP_ID and pass it here.
-          edge_app_id: ${{ inputs.environment == 'production' && vars.PRODUCTION_EDGE_APP_ID || vars.STAGE_EDGE_APP_ID }}
+          # Trailing || '' avoids boolean false / cross-env ID when a var is unset.
+          edge_app_id: ${{ (inputs.environment == 'production' && vars.PRODUCTION_EDGE_APP_ID) || (inputs.environment == 'stage' && vars.STAGE_EDGE_APP_ID) || '' }}
