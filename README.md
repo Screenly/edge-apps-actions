@@ -13,17 +13,17 @@ Branch names are only used in your workflow triggers (`on.push.branches` / `gith
 
 ## GitHub secrets
 
-Add this repository (or environment) secret before running the workflows:
+Both **stage** and **production** need a Screenly API token. Add `SCREENLY_API_TOKEN` as a repository secret (shared by both), or as an environment secret on each of the `stage` and `production` GitHub Environments when the tokens differ.
 
 | Secret | Required by | Description |
 | ------ | ----------- | ----------- |
-| `SCREENLY_API_TOKEN` | `initialize`, `update` | Screenly API token passed as `screenly_api_token` |
+| `SCREENLY_API_TOKEN` | `initialize`, `update` (stage and production) | Screenly API token passed as `screenly_api_token` |
 
 ```yaml
 screenly_api_token: ${{ secrets.SCREENLY_API_TOKEN }}
 ```
 
-The token is forwarded to `screenly/cli` for create/deploy/instance commands. The `update` action also validates it with `Authorization: Token <token>` against `/api/v4.1/users/` on the target API (`https://api.screenlyappstage.com` for stage, `https://api.screenlyapp.com` for production). Use environment secrets on the `stage` / `production` GitHub Environments if each env needs a different token.
+The token is forwarded to `screenly/cli` for create/deploy/instance commands. The `update` action also validates it with `Authorization: Token <token>` against `/api/v4.1/users/` on the target API (`https://api.screenlyappstage.com` for stage, `https://api.screenlyapp.com` for production).
 
 ## Repo variables
 
