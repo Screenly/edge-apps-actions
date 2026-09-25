@@ -36,6 +36,6 @@ jobs:
           edge_app_name: ${{ inputs.edge_app_name }}
           edge_app_title: ${{ inputs.edge_app_title }}
           environment: ${{ inputs.environment }}
-          # Repo vars only: STAGE_EDGE_APP_ID / PRODUCTION_EDGE_APP_ID.
-          # Leave the matching var unset on first create (resolves to "").
+          # First create: leave STAGE_EDGE_APP_ID / PRODUCTION_EDGE_APP_ID unset
+          # so this is "". After create: set the matching var to the printed id.
           edge_app_id: ${{ (inputs.environment == 'production' && vars.PRODUCTION_EDGE_APP_ID) || (inputs.environment == 'stage' && vars.STAGE_EDGE_APP_ID) || '' }}
