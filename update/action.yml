@@ -3,7 +3,7 @@ description: Builds and deploys an existing Screenly Edge App.
 
 inputs:
   screenly_api_token:
-    description: Screenly API token
+    description: Screenly API token (secrets.SCREENLY_API_TOKEN)
     required: true
   environment:
     description: Target environment (stage or production)
@@ -15,9 +15,9 @@ inputs:
     default: 'false'
   edge_app_id:
     description: >
-      Edge App ID for this environment. When provided, it's exported as
-      EDGE_APP_ID and takes precedence over any id in screenly.yml. Always
-      uses screenly.yml (stage and production share one manifest).
+      Edge App ID for this environment (vars.STAGE_EDGE_APP_ID or
+      vars.PRODUCTION_EDGE_APP_ID). Required for update. Placeholders from
+      bad Expressions (false, true, null, 0) are rejected.
     required: false
     default: ""
 
@@ -29,35 +29,62 @@ runs:
       shell: bash
       env:
         EDGE_APP_ID_INPUT: ${{ inputs.edge_app_id }}
+        SCREENLY_API_TOKEN_INPUT: ${{ inputs.screenly_api_token }}
+        ENVIRONMENT_INPUT: ${{ inputs.environment }}
       run: |
-        HAS_BUILD_STEP=false
+        set -euo pipefail
 
+        if [ -z "${SCREENLY_API_TOKEN_INPUT}" ]; then
+          echo "::error::screenly_api_token is empty. Add GitHub secret SCREENLY_API_TOKEN for this environment (stage and production both need a token)."
+          exit 1
+        fi
+
+        case "${ENVIRONMENT_INPUT}" in
+          stage)
+            echo "API_BASE_URL=https://api.screenlyappstage.com" >> "$GITHUB_ENV"
+            EXPECTED_VAR="STAGE_EDGE_APP_ID"
+            ;;
+          production)
+            echo "API_BASE_URL=https://api.screenlyapp.com" >> "$GITHUB_ENV"
+            EXPECTED_VAR="PRODUCTION_EDGE_APP_ID"
+            ;;
+          *)
+            echo "::error::environment must be 'stage' or 'production' (got '${ENVIRONMENT_INPUT}')."
+            exit 1
+            ;;
+        esac
+
+        HAS_BUILD_STEP=false
         if [ -f "package.json" ]; then
           SCREENLY_DEP=$(jq -r '((.dependencies // {}) + (.devDependencies // {}))["@screenly/edge-apps"] // empty' package.json)
           if [ -n "$SCREENLY_DEP" ]; then
             HAS_BUILD_STEP=true
           fi
         fi
-
         echo "has_build_step=$HAS_BUILD_STEP" >> "$GITHUB_OUTPUT"
         echo "MANIFEST_FILE_NAME=screenly.yml" >> "$GITHUB_ENV"
 
-        if [ -n "$EDGE_APP_ID_INPUT" ]; then
-          delimiter="ghadelim_${RANDOM}${RANDOM}${RANDOM}_$$"
-          echo "EDGE_APP_ID<<${delimiter}" >> "$GITHUB_ENV"
-          echo "$EDGE_APP_ID_INPUT" >> "$GITHUB_ENV"
-          echo "${delimiter}" >> "$GITHUB_ENV"
-        fi
-
-        if [ "${{ inputs.environment }}" = "stage" ]; then
-          echo "API_BASE_URL=https://api.screenlyappstage.com" >> "$GITHUB_ENV"
-        else
-          echo "API_BASE_URL=https://api.screenlyapp.com" >> "$GITHUB_ENV"
-        fi
+        # Trim whitespace; ignore Expression leftovers / placeholders.
+        EDGE_APP_ID_TRIMMED=$(printf '%s' "${EDGE_APP_ID_INPUT}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        EDGE_APP_ID_LC=$(printf '%s' "${EDGE_APP_ID_TRIMMED}" | tr '[:upper:]' '[:lower:]')
+        case "${EDGE_APP_ID_LC}" in
+          ''|false|true|null|none|0|undefined)
+            echo "::error::edge_app_id is required for update. Set repo variable ${EXPECTED_VAR} to the id printed by initialize (do not use placeholders like 0 or false)."
+            exit 1
+            ;;
+          *)
+            delimiter="ghadelim_${RANDOM}${RANDOM}${RANDOM}_$$"
+            echo "EDGE_APP_ID<<${delimiter}" >> "$GITHUB_ENV"
+            echo "${EDGE_APP_ID_TRIMMED}" >> "$GITHUB_ENV"
+            echo "${delimiter}" >> "$GITHUB_ENV"
+            echo "Using EDGE_APP_ID=${EDGE_APP_ID_TRIMMED}"
+            ;;
+        esac
 
     - name: Verify Screenly API token
       shell: bash
       run: |
+        set -euo pipefail
         STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
           --connect-timeout 10 \
           --max-time 30 \
@@ -67,7 +94,7 @@ runs:
           "$API_BASE_URL/api/v4.1/users/")
         echo "Auth check status: $STATUS"
         if [ "$STATUS" != "200" ]; then
-          echo "Token validation failed (HTTP $STATUS)"
+          echo "::error::SCREENLY_API_TOKEN validation failed for ${{ inputs.environment }} (HTTP $STATUS). Check the secret for this environment."
           exit 1
         fi
         echo "Token is valid"
