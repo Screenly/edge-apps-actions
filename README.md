@@ -11,6 +11,20 @@ Copy these into your app repo under `.github/workflows/`:
 
 Branch names are only used in your workflow triggers (`on.push.branches` / `github.ref`). The actions themselves work the same on `main` or `master` — change the branch names in the example to match your repo.
 
+## GitHub secrets
+
+Add this repository (or environment) secret before running the workflows:
+
+| Secret | Required by | Description |
+| ------ | ----------- | ----------- |
+| `SCREENLY_API_TOKEN` | `initialize`, `update` | Screenly API token passed as `screenly_api_token` |
+
+```yaml
+screenly_api_token: ${{ secrets.SCREENLY_API_TOKEN }}
+```
+
+The token is forwarded to `screenly/cli` for create/deploy/instance commands. The `update` action also validates it with `Authorization: Token <token>` against `/api/v4.1/users/` on the target API (`https://api.screenlyappstage.com` for stage, `https://api.screenlyapp.com` for production). Use environment secrets on the `stage` / `production` GitHub Environments if each env needs a different token.
+
 ## Repo variables
 
 Use **only** these GitHub Actions repository variables for Edge App ids:
@@ -20,7 +34,7 @@ Use **only** these GitHub Actions repository variables for Edge App ids:
 | `STAGE_EDGE_APP_ID` | stage |
 | `PRODUCTION_EDGE_APP_ID` | production |
 
-There is no `EDGE_APP_ID` secret. Leave each var **unset** until that environment’s first initialize succeeds, then store the printed id. Do not use placeholders (`0`, `false`, etc.) — any other non-empty value is treated as an app id.
+Do not store Edge App ids as secrets. Leave each var **unset** until that environment’s first initialize succeeds, then store the printed id. Do not use placeholders (`0`, `false`, etc.) — any other non-empty value is treated as an app id.
 
 ## Available Actions
 
@@ -54,7 +68,7 @@ Creates and deploys a new Screenly Edge App instance.
 
 | Input                | Description                                    | Required | Default |
 | -------------------- | ---------------------------------------------- | -------- | ------- |
-| `screenly_api_token` | Screenly API token                             | Yes      |         |
+| `screenly_api_token` | Screenly API token (`secrets.SCREENLY_API_TOKEN`) | Yes      |         |
 | `edge_app_name`      | Edge App name (used for the CLI `--name` flag) | Yes      |         |
 | `edge_app_title`     | Display title for the Edge App instance        | Yes      |         |
 | `environment`        | Target environment (`stage` or `production`)   | No       | `stage` |
@@ -81,7 +95,7 @@ Builds and deploys an existing Screenly Edge App.
 
 | Input                     | Description                                                      | Required | Default |
 | ------------------------- | ---------------------------------------------------------------- | -------- | ------- |
-| `screenly_api_token`      | Screenly API token                                               | Yes      |         |
+| `screenly_api_token`      | Screenly API token (`secrets.SCREENLY_API_TOKEN`)                | Yes      |         |
 | `environment`             | Target environment (`stage` or `production`)                     | No       | `stage` |
 | `delete_missing_settings` | Delete settings that exist on the server but not in the manifest | No       | `false` |
 | `edge_app_id`             | Edge App ID for this environment                                 | No       | `""`    |
