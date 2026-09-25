@@ -11,7 +11,16 @@ Copy these into your app repo under `.github/workflows/`:
 
 Branch names are only used in your workflow triggers (`on.push.branches` / `github.ref`). The actions themselves work the same on `main` or `master` — change the branch names in the example to match your repo.
 
-After the first successful initialize, store the printed Edge App id in repo variables `STAGE_EDGE_APP_ID` / `PRODUCTION_EDGE_APP_ID` and pass them as `edge_app_id` on later runs. Leave those vars **unset** (do not use placeholders like `0` or `false`) until create has printed a real id — any non-empty string is treated as an app id.
+## Repo variables
+
+Use **only** these GitHub Actions repository variables for Edge App ids:
+
+| Variable | Environment |
+| -------- | ----------- |
+| `STAGE_EDGE_APP_ID` | stage |
+| `PRODUCTION_EDGE_APP_ID` | production |
+
+There is no `EDGE_APP_ID` secret. Leave each var **unset** until that environment’s first initialize succeeds, then store the printed id. Do not use placeholders (`0`, `false`, etc.) — any other non-empty value is treated as an app id.
 
 ## Available Actions
 
@@ -40,8 +49,6 @@ Creates and deploys a new Screenly Edge App instance.
     edge_app_name: my-edge-app
     edge_app_title: My Edge App
     environment: ${{ inputs.environment }} # stage or production
-    # First create: leave the matching var unset so this resolves to "".
-    # After create: set STAGE_EDGE_APP_ID / PRODUCTION_EDGE_APP_ID to the printed id.
     edge_app_id: ${{ (inputs.environment == 'production' && vars.PRODUCTION_EDGE_APP_ID) || (inputs.environment == 'stage' && vars.STAGE_EDGE_APP_ID) || '' }}
 ```
 
@@ -53,9 +60,9 @@ Creates and deploys a new Screenly Edge App instance.
 | `environment`        | Target environment (`stage` or `production`)   | No       | `stage` |
 | `edge_app_id`        | Edge App ID for this environment               | No       | `""`    |
 
-Always uses `screenly.yml` for both stage and production (no `screenly_qc.yml`). When `edge_app_id` is non-empty, it is exported as `EDGE_APP_ID` and takes precedence over any `id` in the manifest. On first-time initialize, pass an empty value (omit the input, or use the expression above with the env var unset) — create does not need an id beforehand. After create succeeds, store the printed id in `STAGE_EDGE_APP_ID` / `PRODUCTION_EDGE_APP_ID` and pass those on later runs (especially `update`).
+Always uses `screenly.yml` for both stage and production (no `screenly_qc.yml`). When `edge_app_id` is a real id, it is exported as `EDGE_APP_ID` and takes precedence over any `id` in the manifest. On first-time initialize, leave the matching repo var unset so the expression above is `""`. After create, set `STAGE_EDGE_APP_ID` or `PRODUCTION_EDGE_APP_ID` to the printed id for later `initialize` / `update` runs.
 
-**GitHub Actions expression tip:** prefer the scoped form above (with a trailing `|| ''`). Patterns like `production && vars.PRODUCTION_EDGE_APP_ID || vars.STAGE_EDGE_APP_ID` can pass the stage id into a production job when the production var is unset, and nested `&&` / `||` forms can evaluate to boolean `false`, which the action treats as a literal app id string `"false"`.
+Use the scoped expression above (with trailing `|| ''`). Avoid `production && vars.PRODUCTION_EDGE_APP_ID || vars.STAGE_EDGE_APP_ID` — that can pass the stage id into production when the production var is unset.
 
 Requires `screenly/cli` `v26.9.0` or later; see the [`v26.9.0` release notes](https://github.com/Screenly/cli/releases/tag/v26.9.0) for details.
 
@@ -69,7 +76,7 @@ Builds and deploys an existing Screenly Edge App.
     screenly_api_token: ${{ secrets.SCREENLY_API_TOKEN }}
     environment: stage # optional, defaults to stage
     delete_missing_settings: false # optional, defaults to false
-    edge_app_id: ${{ vars.STAGE_EDGE_APP_ID }} # use PRODUCTION_EDGE_APP_ID in the production job
+    edge_app_id: ${{ vars.STAGE_EDGE_APP_ID }} # production job: vars.PRODUCTION_EDGE_APP_ID
 ```
 
 | Input                     | Description                                                      | Required | Default |
@@ -79,4 +86,6 @@ Builds and deploys an existing Screenly Edge App.
 | `delete_missing_settings` | Delete settings that exist on the server but not in the manifest | No       | `false` |
 | `edge_app_id`             | Edge App ID for this environment                                 | No       | `""`    |
 
-Always uses `screenly.yml` for both stage and production (no `screenly_qc.yml`). With a shared manifest, pass `edge_app_id` per environment (`vars.STAGE_EDGE_APP_ID` / `vars.PRODUCTION_EDGE_APP_ID`) so stage and production do not rely on an `id` inside `screenly.yml`. When provided and non-empty, it's exported as `EDGE_APP_ID` and takes precedence over any `id` in the manifest. Separate jobs (as in [`examples/update-edge-app.yml`](examples/update-edge-app.yml)) are safer than a single expression that switches vars with `&&` / `||`. Requires `screenly/cli` `v26.9.0` or later; see the [`v26.9.0` release notes](https://github.com/Screenly/cli/releases/tag/v26.9.0) for details.
+Always uses `screenly.yml` for both stage and production (no `screenly_qc.yml`). Prefer separate jobs per environment (as in [`examples/update-edge-app.yml`](examples/update-edge-app.yml)), each passing only its own var — no `&&` / `||` switching. When `edge_app_id` is set, it is exported as `EDGE_APP_ID` and takes precedence over any `id` in the manifest.
+
+Requires `screenly/cli` `v26.9.0` or later; see the [`v26.9.0` release notes](https://github.com/Screenly/cli/releases/tag/v26.9.0) for details.
