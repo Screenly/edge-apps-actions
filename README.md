@@ -7,9 +7,18 @@ Composite GitHub Actions for Screenly Edge Apps.
 Copy these into your app repo under `.github/workflows/`:
 
 - [`examples/initialize-edge-app.yml`](examples/initialize-edge-app.yml) — manual create/deploy for stage or production
-- [`examples/update-edge-app.yml`](examples/update-edge-app.yml) — deploy stage from `development`, production from `main`
+- [`examples/update-edge-app.yml`](examples/update-edge-app.yml) — deploy stage on every push to `main`/`master` (rolling); deploy production when a `v*` tag is pushed
 
 Branch names are only used in your workflow triggers (`on.push.branches` / `github.ref`). The actions themselves work the same on `main` or `master` — change the branch names in the example to match your repo.
+
+To release to production, tag the commit on `main`/`master` and push the tag:
+
+```sh
+git tag v26.10.0
+git push origin v26.10.0
+```
+
+Tip: restrict the GitHub `production` environment to tags matching `v*` (Settings → Environments → Deployment branches and tags) so only tagged releases can deploy to production.
 
 ## Setup checklist
 
