@@ -4,14 +4,14 @@ Composite GitHub Actions for Screenly Edge Apps.
 
 ## Versioning
 
-This repo uses [Calendar Versioning](https://calver.org/) with `vYY.M.PATCH` tags (e.g. `v26.9.1`). Pin an exact tag in your workflows and bump it deliberately; there is no floating tag. The legacy `@v1` tag is frozen and receives no fixes. See [`CONTRIBUTING.md`](CONTRIBUTING.md#tagging-and-releases) for the full scheme.
+This repo uses [Calendar Versioning](https://calver.org/) with `vYY.M.PATCH` tags (e.g. `v26.9.1`). Each release is an immutable `vYY.M.PATCH` tag; pin an exact one and bump it deliberately. The legacy `@v1` tag is frozen and receives no fixes. See [`CONTRIBUTING.md`](CONTRIBUTING.md#tagging-and-releases) for the full scheme.
 
 ## Example workflows
 
 Copy these into your app repo under `.github/workflows/`:
 
 - [`examples/initialize-edge-app.yml`](examples/initialize-edge-app.yml) — manual create/deploy for stage or production
-- [`examples/update-edge-app.yml`](examples/update-edge-app.yml) — deploy stage on every push to `main`/`master` (rolling); deploy production when a `v*` tag is pushed
+- [`examples/update-edge-app.yml`](examples/update-edge-app.yml) — deploy stage on every push to `main`/`master` (rolling); deploy production when a version tag like `v26.10.0` is pushed
 
 Branch names are only used in your workflow triggers (`on.push.branches` / `github.ref`). The actions themselves work the same on `main` or `master` — change the branch names in the example to match your repo.
 
@@ -22,7 +22,7 @@ git tag v26.10.0
 git push origin v26.10.0
 ```
 
-Tip: restrict the GitHub `production` environment to tags matching `v*` (Settings → Environments → Deployment branches and tags) so only tagged releases can deploy to production.
+Tip: restrict the GitHub `production` environment to tags matching `v[0-9]*` (Settings → Environments → Deployment branches and tags) so only tagged releases can deploy to production.
 
 ## Setup checklist
 
