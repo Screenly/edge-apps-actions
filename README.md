@@ -11,7 +11,7 @@ Copy these into your app repo under `.github/workflows/`:
 
 Branch names are only used in your workflow triggers (`on.push.branches` / `github.ref`). The actions themselves work the same on `main` or `master` — change the branch names in the example to match your repo.
 
-To release to production, tag the commit on `main`/`master` and push the tag:
+To release to production, tag the commit on `main`/`master` and push the tag. The production job refuses to deploy tags whose commit is not on the repo's default branch:
 
 ```sh
 git tag v26.10.0
