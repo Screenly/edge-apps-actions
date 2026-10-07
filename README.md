@@ -2,14 +2,27 @@
 
 Composite GitHub Actions for Screenly Edge Apps.
 
+## Versioning
+
+This repo uses [Calendar Versioning](https://calver.org/) with `vYY.M.PATCH` tags (e.g. `v26.9.1`). Each release is an immutable `vYY.M.PATCH` tag; pin an exact one and bump it deliberately. The legacy `@v1` tag is frozen and receives no fixes. See [`CONTRIBUTING.md`](CONTRIBUTING.md#tagging-and-releases) for the full scheme.
+
 ## Example workflows
 
 Copy these into your app repo under `.github/workflows/`:
 
 - [`examples/initialize-edge-app.yml`](examples/initialize-edge-app.yml) — manual create/deploy for stage or production
-- [`examples/update-edge-app.yml`](examples/update-edge-app.yml) — deploy stage from `development`, production from `main`
+- [`examples/update-edge-app.yml`](examples/update-edge-app.yml) — deploy stage on every push to `main`/`master` (rolling); deploy production when a version tag like `v26.10.0` is pushed
 
 Branch names are only used in your workflow triggers (`on.push.branches` / `github.ref`). The actions themselves work the same on `main` or `master` — change the branch names in the example to match your repo.
+
+To release to production, tag the commit on `main`/`master` and push the tag. The production job refuses to deploy tags whose commit is not on the repo's default branch. We recommend the same CalVer `vYY.M.PATCH` scheme for app releases (e.g. `v26.10.0` for the first release in October 2026, `v26.10.1` for the next one that month):
+
+```sh
+git tag v26.10.0
+git push origin v26.10.0
+```
+
+Tip: restrict the GitHub `production` environment to tags matching `v[0-9]*` (Settings → Environments → Deployment branches and tags) so only tagged releases can deploy to production.
 
 ## Setup checklist
 
@@ -54,7 +67,7 @@ Use **only** these GitHub Actions repository variables for Edge App ids (never s
 Builds, lints, formats, and tests a Screenly Edge App.
 
 ```yaml
-- uses: Screenly/edge-apps-actions/checks@v1
+- uses: Screenly/edge-apps-actions/checks@v26.9.1
   with:
     bun-version: latest # optional
 ```
@@ -68,7 +81,7 @@ Builds, lints, formats, and tests a Screenly Edge App.
 Creates and deploys a new Screenly Edge App instance.
 
 ```yaml
-- uses: Screenly/edge-apps-actions/initialize@v1
+- uses: Screenly/edge-apps-actions/initialize@v26.9.1
   with:
     screenly_api_token: ${{ secrets.SCREENLY_API_TOKEN }}
     edge_app_name: my-edge-app
@@ -96,7 +109,7 @@ Requires `screenly/cli` `v26.9.0` or later; see the [`v26.9.0` release notes](ht
 Builds and deploys an existing Screenly Edge App.
 
 ```yaml
-- uses: Screenly/edge-apps-actions/update@v1
+- uses: Screenly/edge-apps-actions/update@v26.9.1
   with:
     screenly_api_token: ${{ secrets.SCREENLY_API_TOKEN }}
     environment: stage # or production
