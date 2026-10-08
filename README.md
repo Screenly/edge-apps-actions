@@ -4,7 +4,7 @@ Composite GitHub Actions for Screenly Edge Apps.
 
 ## Versioning
 
-This repo uses [Calendar Versioning](https://calver.org/) with `vYY.M.PATCH` tags (e.g. `v26.9.1`). Each release is an immutable `vYY.M.PATCH` tag; pin an exact one and bump it deliberately. The legacy `@v1` tag is frozen and receives no fixes. See [`CONTRIBUTING.md`](CONTRIBUTING.md#tagging-and-releases) for the full scheme.
+This repo uses [Calendar Versioning](https://calver.org/) with `vYY.M.PATCH` tags (e.g. `v26.10.0`). Each release is an immutable `vYY.M.PATCH` tag; pin an exact one and bump it deliberately. The legacy `@v1` tag is frozen and receives no fixes. See [`CONTRIBUTING.md`](CONTRIBUTING.md#tagging-and-releases) for the full scheme.
 
 ## Example workflows
 
@@ -67,7 +67,7 @@ Use **only** these GitHub Actions repository variables for Edge App ids (never s
 Builds, lints, formats, and tests a Screenly Edge App.
 
 ```yaml
-- uses: Screenly/edge-apps-actions/checks@v26.9.1
+- uses: Screenly/edge-apps-actions/checks@v26.10.0
   with:
     bun-version: latest # optional
 ```
@@ -81,7 +81,7 @@ Builds, lints, formats, and tests a Screenly Edge App.
 Creates and deploys a new Screenly Edge App instance.
 
 ```yaml
-- uses: Screenly/edge-apps-actions/initialize@v26.9.1
+- uses: Screenly/edge-apps-actions/initialize@v26.10.0
   with:
     screenly_api_token: ${{ secrets.SCREENLY_API_TOKEN }}
     edge_app_name: my-edge-app
@@ -109,7 +109,7 @@ Requires `screenly/cli` `v26.9.0` or later; see the [`v26.9.0` release notes](ht
 Builds and deploys an existing Screenly Edge App.
 
 ```yaml
-- uses: Screenly/edge-apps-actions/update@v26.9.1
+- uses: Screenly/edge-apps-actions/update@v26.10.0
   with:
     screenly_api_token: ${{ secrets.SCREENLY_API_TOKEN }}
     environment: stage # or production
