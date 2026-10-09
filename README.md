@@ -22,6 +22,12 @@ git tag v26.10.0
 git push origin v26.10.0
 ```
 
+Then publish a GitHub Release whose notes list the pull requests merged since the previous release. Add `--draft` to review the notes before publishing:
+
+```sh
+gh release create v26.10.0 --verify-tag --generate-notes --title v26.10.0
+```
+
 Tip: restrict the GitHub `production` environment to tags matching `v[0-9]*` (Settings → Environments → Deployment branches and tags) so only tagged releases can deploy to production.
 
 ## Setup checklist
