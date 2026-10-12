@@ -28,7 +28,15 @@ Then publish a GitHub Release whose notes list the pull requests merged since th
 gh release create v26.10.0 --verify-tag --generate-notes --title v26.10.0
 ```
 
-Tip: restrict the GitHub `production` environment to tags matching `v[0-9]*` (Settings → Environments → Deployment branches and tags) so only tagged releases can deploy to production.
+## Protecting production
+
+A tag push runs the workflow file from the tagged commit, not the one on the default branch. Anyone who can push a `v*` tag can therefore tag a commit whose workflow drops the default-branch check, so that check guards against mistakes, not misuse. Protect production with repository settings instead:
+
+1. **Restrict who can push version tags.** Add a tag ruleset (Settings → Rules → Rulesets → New tag ruleset) targeting `v*`, with **Restrict creations**, **Restrict updates** and **Restrict deletions** enabled. Put your release team (e.g. `edge-app-release-manager`) and repository admins on the bypass list; they are then the only people who can push a version tag.
+2. **Restrict the `production` environment to tags.** Under Settings → Environments → `production` → Deployment branches and tags, allow only tags matching `v[0-9]*`.
+3. **Require approval for production.** Add required reviewers to the `production` environment, and enable **Prevent self-review** so the person who pushed a tag cannot approve its deploy.
+
+Rulesets apply to the repository they are set on, so each app repo needs its own, or an organization admin can add one ruleset that covers every app repo.
 
 ## Setup checklist
 
@@ -38,6 +46,7 @@ Tip: restrict the GitHub `production` environment to tags matching `v[0-9]*` (Se
 4. Run **Initialize Edge App** for stage, then for production.
 5. After each successful initialize, copy the printed Edge App id into the matching repo variable.
 6. Use **Update Edge App** for later deploys (requires those vars to be set).
+7. Protect production with a `v*` tag ruleset, a tag-only `production` environment and required reviewers (see [Protecting production](#protecting-production)).
 
 ## GitHub secrets
 
