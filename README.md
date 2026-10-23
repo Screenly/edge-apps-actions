@@ -1,4 +1,7 @@
-# edge-apps-actions
+
+[![Version](https://img.shields.io/github/v/release/Screenly/edge-apps-actions)](https://github.com/Screenly/edge-apps-actions/releases/latest)
+
+# Edge Apps Actions
 
 Composite GitHub Actions for Screenly Edge Apps.
 
