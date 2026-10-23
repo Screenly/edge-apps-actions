@@ -87,7 +87,7 @@ When deploying the repo root, the actions add `.git/`, `.github/`, `.claude/` an
 Builds, lints, formats, and tests a Screenly Edge App.
 
 ```yaml
-- uses: Screenly/edge-apps-actions/checks@v26.10.0
+- uses: Screenly/edge-apps-actions/checks@v26.10.1
   with:
     bun-version: latest # optional
 ```
@@ -101,7 +101,7 @@ Builds, lints, formats, and tests a Screenly Edge App.
 Creates and deploys a new Screenly Edge App instance.
 
 ```yaml
-- uses: Screenly/edge-apps-actions/initialize@v26.10.0
+- uses: Screenly/edge-apps-actions/initialize@v26.10.1
   with:
     screenly_api_token: ${{ secrets.SCREENLY_API_TOKEN }}
     edge_app_name: my-edge-app
@@ -131,7 +131,7 @@ Requires `screenly/cli` `v26.9.0` or later; see the [`v26.9.0` release notes](ht
 Builds and deploys an existing Screenly Edge App.
 
 ```yaml
-- uses: Screenly/edge-apps-actions/update@v26.10.0
+- uses: Screenly/edge-apps-actions/update@v26.10.1
   with:
     screenly_api_token: ${{ secrets.SCREENLY_API_TOKEN }}
     environment: stage # or production
