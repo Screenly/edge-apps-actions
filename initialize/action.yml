@@ -33,6 +33,8 @@ runs:
         EDGE_APP_ID_INPUT: ${{ inputs.edge_app_id }}
         SCREENLY_API_TOKEN_INPUT: ${{ inputs.screenly_api_token }}
         ENVIRONMENT_INPUT: ${{ inputs.environment }}
+        EDGE_APP_NAME_INPUT: ${{ inputs.edge_app_name }}
+        EDGE_APP_TITLE_INPUT: ${{ inputs.edge_app_title }}
       run: |
         set -euo pipefail
 
@@ -40,6 +42,27 @@ runs:
           echo "::error::screenly_api_token is empty. Add GitHub secret SCREENLY_API_TOKEN for this environment (stage and production both need a token)."
           exit 1
         fi
+
+        # The name and title end up inside a double-quoted shell command run by
+        # screenly/cli, so reject characters that would break out of the quotes.
+        check_cli_arg() {
+          if [ -z "$2" ]; then
+            echo "::error::$1 is empty."
+            exit 1
+          fi
+          case "$2" in
+            *[\"\$\`\\]*)
+              echo "::error::$1 must not contain \", \$, \` or \\."
+              exit 1
+              ;;
+          esac
+          if [[ "$2" =~ [[:cntrl:]] ]]; then
+            echo "::error::$1 must not contain control characters (e.g. newlines)."
+            exit 1
+          fi
+        }
+        check_cli_arg edge_app_name "${EDGE_APP_NAME_INPUT}"
+        check_cli_arg edge_app_title "${EDGE_APP_TITLE_INPUT}"
 
         case "${ENVIRONMENT_INPUT}" in
           stage)
@@ -82,6 +105,9 @@ runs:
 
     - name: Verify Screenly API token
       shell: bash
+      env:
+        SCREENLY_API_TOKEN_INPUT: ${{ inputs.screenly_api_token }}
+        ENVIRONMENT_INPUT: ${{ inputs.environment }}
       run: |
         set -euo pipefail
         STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
@@ -89,11 +115,11 @@ runs:
           --max-time 30 \
           --retry 3 \
           --retry-delay 2 \
-          -H "Authorization: Token ${{ inputs.screenly_api_token }}" \
+          -H "Authorization: Token ${SCREENLY_API_TOKEN_INPUT}" \
           "$API_BASE_URL/api/v4.1/users/")
         echo "Auth check status: $STATUS"
         if [ "$STATUS" != "200" ]; then
-          echo "::error::SCREENLY_API_TOKEN validation failed for ${{ inputs.environment }} (HTTP $STATUS). Check the secret for this environment."
+          echo "::error::SCREENLY_API_TOKEN validation failed for ${ENVIRONMENT_INPUT} (HTTP $STATUS). Check the secret for this environment."
           exit 1
         fi
         echo "Token is valid"

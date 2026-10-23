@@ -13,7 +13,7 @@ Copy these into your app repo under `.github/workflows/`:
 - [`examples/initialize-edge-app.yml`](examples/initialize-edge-app.yml) — manual create/deploy for stage or production
 - [`examples/update-edge-app.yml`](examples/update-edge-app.yml) — deploy stage on every push to `main`/`master` (rolling); deploy production when a version tag like `v26.10.0` is pushed
 
-Branch names are only used in your workflow triggers (`on.push.branches` / `github.ref`). The actions themselves work the same on `main` or `master` — change the branch names in the example to match your repo.
+The update example triggers on both `main` and `master` and only deploys stage for the repo's default branch, so it works unchanged in either kind of repo. Both examples run one deploy per environment at a time (`concurrency`) and use a read-only `GITHUB_TOKEN`.
 
 To release to production, tag the commit on `main`/`master` and push the tag. The production job refuses to deploy tags whose commit is not on the repo's default branch. We recommend the same CalVer `vYY.M.PATCH` scheme for app releases (e.g. `v26.10.0` for the first release in October 2026, `v26.10.1` for the next one that month):
 
@@ -103,6 +103,8 @@ Creates and deploys a new Screenly Edge App instance.
 | `edge_app_title`     | Display title for the Edge App instance           | Yes      |         |
 | `environment`        | `stage` or `production` only                      | No       | `stage` |
 | `edge_app_id`        | Edge App ID for this environment                  | No       | `""`    |
+
+`edge_app_name` and `edge_app_title` must not contain `"`, `$`, `` ` ``, `\` or control characters; the action fails before calling the CLI if they do.
 
 Always uses `screenly.yml` for both stage and production. When `edge_app_id` is a real id, it is exported as `EDGE_APP_ID` and takes precedence over any `id` in the manifest. Empty / placeholder values are treated as unset (first create).
 

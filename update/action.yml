@@ -83,6 +83,9 @@ runs:
 
     - name: Verify Screenly API token
       shell: bash
+      env:
+        SCREENLY_API_TOKEN_INPUT: ${{ inputs.screenly_api_token }}
+        ENVIRONMENT_INPUT: ${{ inputs.environment }}
       run: |
         set -euo pipefail
         STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
@@ -90,11 +93,11 @@ runs:
           --max-time 30 \
           --retry 3 \
           --retry-delay 2 \
-          -H "Authorization: Token ${{ inputs.screenly_api_token }}" \
+          -H "Authorization: Token ${SCREENLY_API_TOKEN_INPUT}" \
           "$API_BASE_URL/api/v4.1/users/")
         echo "Auth check status: $STATUS"
         if [ "$STATUS" != "200" ]; then
-          echo "::error::SCREENLY_API_TOKEN validation failed for ${{ inputs.environment }} (HTTP $STATUS). Check the secret for this environment."
+          echo "::error::SCREENLY_API_TOKEN validation failed for ${ENVIRONMENT_INPUT} (HTTP $STATUS). Check the secret for this environment."
           exit 1
         fi
         echo "Token is valid"
