@@ -1,9 +1,14 @@
-
 [![Version](https://img.shields.io/github/v/release/Screenly/edge-apps-actions)](https://github.com/Screenly/edge-apps-actions/releases/latest)
 
-# Edge Apps Actions
+# Edge Apps GitHub Actions
 
-Composite GitHub Actions for Screenly Edge Apps.
+Reusable GitHub Actions that check, build and deploy [Screenly Edge Apps](https://developer.screenly.io/edge-apps/). Add them to an Edge App repo to:
+
+- **`checks`**: lint, format-check, build and test the app on every pull request.
+- **`initialize`**: create the Edge App and its first instance in stage or production (once per environment).
+- **`update`**: deploy every push to the default branch to stage, and every `v*` release tag to production.
+
+Bun apps with a `build` script are built and deployed from `dist/`; plain HTML apps are deployed as-is. Copy the [example workflows](#example-workflows) to get started.
 
 ## Versioning
 
