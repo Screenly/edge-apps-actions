@@ -21,7 +21,8 @@ jobs:
   deploy-stage:
     name: Updating Edge App in stage
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)) || github.event_name == 'workflow_dispatch'
+    # Pushes and manual runs both deploy stage only from the default branch.
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     environment: stage
     # One deploy per environment at a time, so an older run can't finish last
     # and overwrite a newer one. Shared with the initialize example.

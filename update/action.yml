@@ -54,14 +54,27 @@ runs:
             ;;
         esac
 
+        # Apps with a build script are built and deployed from ./dist.
         HAS_BUILD_STEP=false
         if [ -f "package.json" ]; then
-          SCREENLY_DEP=$(jq -r '((.dependencies // {}) + (.devDependencies // {}))["@screenly/edge-apps"] // empty' package.json)
-          if [ -n "$SCREENLY_DEP" ]; then
+          BUILD_SCRIPT=$(jq -r '.scripts.build // empty' package.json)
+          if [ -n "$BUILD_SCRIPT" ]; then
             HAS_BUILD_STEP=true
           fi
         fi
         echo "has_build_step=$HAS_BUILD_STEP" >> "$GITHUB_OUTPUT"
+
+        # Apps without a build step are deployed from the repo root, and the
+        # CLI uploads every file there, hidden folders included. Keep git
+        # internals, workflows and dependencies out of the deployed app.
+        if [ "$HAS_BUILD_STEP" = false ]; then
+          if [ -s .ignore ] && [ -n "$(tail -c 1 .ignore)" ]; then
+            echo >> .ignore
+          fi
+          for pattern in .git/ .github/ .claude/ node_modules/; do
+            grep -qxF "$pattern" .ignore 2>/dev/null || echo "$pattern" >> .ignore
+          done
+        fi
         echo "MANIFEST_FILE_NAME=screenly.yml" >> "$GITHUB_ENV"
 
         # Trim whitespace; ignore Expression leftovers / placeholders.

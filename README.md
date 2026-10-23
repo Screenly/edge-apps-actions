@@ -14,7 +14,7 @@ This repo uses [Calendar Versioning](https://calver.org/) with `vYY.M.PATCH` tag
 Copy these into your app repo under `.github/workflows/`:
 
 - [`examples/initialize-edge-app.yml`](examples/initialize-edge-app.yml) — manual create/deploy for stage or production
-- [`examples/update-edge-app.yml`](examples/update-edge-app.yml) — deploy stage on every push to `main`/`master` (rolling); deploy production when a version tag like `v26.10.0` is pushed
+- [`examples/update-edge-app.yml`](examples/update-edge-app.yml) — deploy stage on every push to the default branch (`main`/`master`) or a manual run from it (rolling); deploy production when a version tag like `v26.10.0` is pushed
 
 The update example triggers on both `main` and `master` and only deploys stage for the repo's default branch, so it works unchanged in either kind of repo. Both examples run one deploy per environment at a time (`concurrency`) and use a read-only `GITHUB_TOKEN`.
 
@@ -67,7 +67,13 @@ Use **only** these GitHub Actions repository variables for Edge App ids (never s
 
 **First create:** leave the matching var unset. The example expression then resolves to `""`, and `initialize` creates a new app.
 
-**Later runs:** set the var to the real id from initialize. `update` requires it and will fail if the value is missing or a placeholder (`false`, `0`, `null`, etc.).
+**Later runs:** set the var to the real id from initialize. `update` requires it and will fail if the value is missing or a placeholder (`false`, `0`, `null`, etc.). `initialize` refuses to run once it is set, so a re-run can't create a duplicate app or instance.
+
+## Build and deploy
+
+`initialize` and `update` build the app when `package.json` has a `build` script: they run `bun install --frozen-lockfile` and `bun run build`, then deploy `./dist`. Otherwise they deploy the repo root as-is.
+
+When deploying the repo root, the actions add `.git/`, `.github/`, `.claude/` and `node_modules/` to `.ignore` (in the runner's workspace only) so they are not uploaded. The CLI uploads every other file in the root; list anything else that isn't part of the app in your `.ignore`.
 
 ## Available Actions
 
@@ -109,7 +115,7 @@ Creates and deploys a new Screenly Edge App instance.
 
 `edge_app_name` and `edge_app_title` must not contain `"`, `$`, `` ` ``, `\` or control characters; the action fails before calling the CLI if they do.
 
-Always uses `screenly.yml` for both stage and production. When `edge_app_id` is a real id, it is exported as `EDGE_APP_ID` and takes precedence over any `id` in the manifest. Empty / placeholder values are treated as unset (first create).
+Always uses `screenly.yml` for both stage and production. When `edge_app_id` is a real id, the environment is already initialized and the action fails; use `update` to deploy. Empty / placeholder values are treated as unset (first create). The new app's id is printed in the job summary right after the app is created, so it is not lost if a later step fails.
 
 **Safe expression:** use the scoped form above with trailing `|| ''`. Do **not** use `production && vars.PRODUCTION_EDGE_APP_ID || vars.STAGE_EDGE_APP_ID` — that can pass the stage id into production when the production var is unset.
 
