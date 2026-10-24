@@ -45,6 +45,28 @@ Then publish a GitHub Release whose notes list the pull requests merged since th
 gh release create v26.10.0 --verify-tag --generate-notes --title v26.10.0
 ```
 
+## Keeping up to date
+
+Pin an exact release (`@vYY.M.PATCH`) and let [Dependabot](https://docs.github.com/en/code-security/dependabot/working-with-dependabot/keeping-your-actions-up-to-date-with-dependabot) open the bump PRs: its `github-actions` updates also bump the ref of reusable workflow calls. Add `.github/dependabot.yml` to the app repo:
+
+```yaml
+version: 2
+updates:
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    # Use the branch you merge into before the default branch; otherwise bump
+    # PRs target the default branch and deploy stage when merged.
+    target-branch: 'development'
+    groups:
+      github-actions:
+        patterns:
+          - '*'
+```
+
+Don't pin a moving ref (`@main` or a re-pointed tag): a bad release would then reach every app's production deploy at once, with no change recorded in the app repo.
+
 ## Protecting production
 
 A tag push runs the workflow file from the tagged commit, not the one on the default branch. Anyone who can push a `v*` tag can therefore tag a commit whose workflow drops the default-branch check, so that check guards against mistakes, not misuse. Protect production with repository settings instead:
