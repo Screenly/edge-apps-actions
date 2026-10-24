@@ -167,7 +167,7 @@ runs:
           exit 1
         fi
         if [ -n "$EXISTING" ]; then
-          echo "::error::An Edge App named '${EDGE_APP_NAME_INPUT}' already exists in ${ENVIRONMENT_INPUT} (id: ${EXISTING}). If it belongs to this repo, set the ${ENVIRONMENT_INPUT} id variable to that id instead of initializing again; otherwise choose a different name."
+          echo "::error::An Edge App named '${EDGE_APP_NAME_INPUT}' already exists in ${ENVIRONMENT_INPUT} (id: ${EXISTING}). If an earlier Initialize run for this repo created it and then failed, delete that app in Screenly and re-run Initialize (see README, 'Recovering from a failed Initialize'). If it is this repo's fully initialized app, set the ${ENVIRONMENT_INPUT} id variable to that id instead. Otherwise choose a different name."
           exit 1
         fi
         echo "No existing Edge App named '${EDGE_APP_NAME_INPUT}' in ${ENVIRONMENT_INPUT}."

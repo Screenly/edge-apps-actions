@@ -115,6 +115,17 @@ Use **only** these GitHub Actions repository variables for Edge App ids (never s
 
 **Later runs:** set the var to the real id from initialize. `update` requires it and will fail if the value is missing or a placeholder (`false`, `0`, `null`, etc.). `initialize` refuses to run once it is set, so a re-run can't create a duplicate app or instance.
 
+## Recovering from a failed Initialize
+
+Initialize prints the new app's id in the job summary right after creating it. If a later step (build, deploy, creating the instance) then fails, the app exists without its instance, and a re-run stops at the duplicate-name check. Don't set the id variable for it: `update` never creates the missing instance. Instead, delete the partly created app and re-run Initialize:
+
+1. Delete the app in the Screenly web app, or with the CLI using the id from the failed run's job summary:
+   ```sh
+   # stage: also set API_BASE_URL=https://api.screenlyappstage.com
+   API_TOKEN=<token> EDGE_APP_ID=<id> screenly edge-app delete
+   ```
+2. Fix the cause of the failure, then run **Initialize Edge App** again for that environment.
+
 ## Build and deploy
 
 `initialize` and `update` build the app when `package.json` has a `build` script: they run `bun install --frozen-lockfile` and `bun run build`, then deploy `./dist`. Otherwise they deploy the repo root as-is.
