@@ -32,7 +32,7 @@ jobs:
       group: edge-app-stage
       cancel-in-progress: true
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: Screenly/edge-apps-actions/update@v26.10.2
         with:
           screenly_api_token: ${{ secrets.SCREENLY_API_TOKEN }}
@@ -53,7 +53,7 @@ jobs:
       group: edge-app-production
       cancel-in-progress: true
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - name: Verify tag is on the default branch
