@@ -104,7 +104,7 @@ Call these from an app repo with `uses:` at the job level and `secrets: inherit`
 
 | Workflow | Inputs | What it does |
 | -------- | ------ | ------------ |
-| [`.github/workflows/update.yml`](.github/workflows/update.yml) | `delete_missing_settings` (boolean, default `true`) | **Stage** job: runs only for the repo's default branch (pushes and manual runs). **Production** job: runs only for a pushed `v*` tag, and refuses tags whose commit is not on the default branch. |
+| [`.github/workflows/update.yml`](.github/workflows/update.yml) | `delete_missing_settings` (boolean, default `true`) | **Stage** job: runs only for pushes and manual runs on the repo's default branch; other triggers are ignored. **Production** job: runs only for a pushed `v*` tag, and refuses tags whose commit is not on the default branch. |
 | [`.github/workflows/initialize.yml`](.github/workflows/initialize.yml) | `environment`, `edge_app_name`, `edge_app_title` (all required) | Creates the Edge App and its first instance in the given environment, reading the id variable for that environment. |
 
 Both workflows:
