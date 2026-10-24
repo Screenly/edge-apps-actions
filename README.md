@@ -1,6 +1,14 @@
-# edge-apps-actions
+[![Version](https://img.shields.io/github/v/release/Screenly/edge-apps-actions)](https://github.com/Screenly/edge-apps-actions/releases/latest)
 
-Composite GitHub Actions for Screenly Edge Apps.
+# Edge Apps GitHub Actions
+
+Reusable GitHub Actions that check, build and deploy [Screenly Edge Apps](https://developer.screenly.io/edge-apps/). Add them to an Edge App repo to:
+
+- **`checks`**: lint, format-check, build and test the app on every pull request.
+- **`initialize`**: create the Edge App and its first instance in stage or production (once per environment).
+- **`update`**: deploy every push to the default branch to stage, and every `v*` release tag to production.
+
+Bun apps with a `build` script are built and deployed from `dist/`; plain HTML apps are deployed as-is. Copy the [example workflows](#example-workflows) to get started.
 
 ## Versioning
 
@@ -11,9 +19,9 @@ This repo uses [Calendar Versioning](https://calver.org/) with `vYY.M.PATCH` tag
 Copy these into your app repo under `.github/workflows/`:
 
 - [`examples/initialize-edge-app.yml`](examples/initialize-edge-app.yml) — manual create/deploy for stage or production
-- [`examples/update-edge-app.yml`](examples/update-edge-app.yml) — deploy stage on every push to `main`/`master` (rolling); deploy production when a version tag like `v26.10.0` is pushed
+- [`examples/update-edge-app.yml`](examples/update-edge-app.yml) — deploy stage on every push to the default branch (`main`/`master`) or a manual run from it (rolling); deploy production when a version tag like `v26.10.0` is pushed
 
-Branch names are only used in your workflow triggers (`on.push.branches` / `github.ref`). The actions themselves work the same on `main` or `master` — change the branch names in the example to match your repo.
+The update example triggers on both `main` and `master` and only deploys stage for the repo's default branch, so it works unchanged in either kind of repo. Both examples run one deploy per environment at a time (`concurrency`) and use a read-only `GITHUB_TOKEN`.
 
 To release to production, tag the commit on `main`/`master` and push the tag. The production job refuses to deploy tags whose commit is not on the repo's default branch. We recommend the same CalVer `vYY.M.PATCH` scheme for app releases (e.g. `v26.10.0` for the first release in October 2026, `v26.10.1` for the next one that month):
 
@@ -73,7 +81,13 @@ Use **only** these GitHub Actions repository variables for Edge App ids (never s
 
 **First create:** leave the matching var unset. The example expression then resolves to `""`, and `initialize` creates a new app.
 
-**Later runs:** set the var to the real id from initialize. `update` requires it and will fail if the value is missing or a placeholder (`false`, `0`, `null`, etc.).
+**Later runs:** set the var to the real id from initialize. `update` requires it and will fail if the value is missing or a placeholder (`false`, `0`, `null`, etc.). `initialize` refuses to run once it is set, so a re-run can't create a duplicate app or instance.
+
+## Build and deploy
+
+`initialize` and `update` build the app when `package.json` has a `build` script: they run `bun install --frozen-lockfile` and `bun run build`, then deploy `./dist`. Otherwise they deploy the repo root as-is.
+
+When deploying the repo root, the actions add `.git/`, `.github/`, `.claude/` and `node_modules/` to `.ignore` (in the runner's workspace only) so they are not uploaded. The CLI uploads every other file in the root; list anything else that isn't part of the app in your `.ignore`.
 
 ## Available Actions
 
@@ -82,7 +96,7 @@ Use **only** these GitHub Actions repository variables for Edge App ids (never s
 Builds, lints, formats, and tests a Screenly Edge App.
 
 ```yaml
-- uses: Screenly/edge-apps-actions/checks@v26.10.0
+- uses: Screenly/edge-apps-actions/checks@v26.10.1
   with:
     bun-version: latest # optional
 ```
@@ -96,7 +110,7 @@ Builds, lints, formats, and tests a Screenly Edge App.
 Creates and deploys a new Screenly Edge App instance.
 
 ```yaml
-- uses: Screenly/edge-apps-actions/initialize@v26.10.0
+- uses: Screenly/edge-apps-actions/initialize@v26.10.1
   with:
     screenly_api_token: ${{ secrets.SCREENLY_API_TOKEN }}
     edge_app_name: my-edge-app
@@ -113,7 +127,9 @@ Creates and deploys a new Screenly Edge App instance.
 | `environment`        | `stage` or `production` only                      | No       | `stage` |
 | `edge_app_id`        | Edge App ID for this environment                  | No       | `""`    |
 
-Always uses `screenly.yml` for both stage and production. When `edge_app_id` is a real id, it is exported as `EDGE_APP_ID` and takes precedence over any `id` in the manifest. Empty / placeholder values are treated as unset (first create).
+`edge_app_name` and `edge_app_title` must not contain `"`, `$`, `` ` ``, `\` or control characters; the action fails before calling the CLI if they do.
+
+Always uses `screenly.yml` for both stage and production. When `edge_app_id` is a real id, the environment is already initialized and the action fails; use `update` to deploy. Empty / placeholder values are treated as unset (first create). The new app's id is printed in the job summary right after the app is created, so it is not lost if a later step fails.
 
 **Safe expression:** use the scoped form above with trailing `|| ''`. Do **not** use `production && vars.PRODUCTION_EDGE_APP_ID || vars.STAGE_EDGE_APP_ID` — that can pass the stage id into production when the production var is unset.
 
@@ -124,7 +140,7 @@ Requires `screenly/cli` `v26.9.0` or later; see the [`v26.9.0` release notes](ht
 Builds and deploys an existing Screenly Edge App.
 
 ```yaml
-- uses: Screenly/edge-apps-actions/update@v26.10.0
+- uses: Screenly/edge-apps-actions/update@v26.10.1
   with:
     screenly_api_token: ${{ secrets.SCREENLY_API_TOKEN }}
     environment: stage # or production

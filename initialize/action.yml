@@ -18,8 +18,10 @@ inputs:
   edge_app_id:
     description: >
       Edge App ID for this environment (vars.STAGE_EDGE_APP_ID or
-      vars.PRODUCTION_EDGE_APP_ID). Omit or leave empty on first create.
-      Placeholders from bad Expressions (false, true, null, 0) are ignored.
+      vars.PRODUCTION_EDGE_APP_ID). Pass it so the action can refuse to run
+      when the environment is already initialized; it is empty on first
+      create. Placeholders from bad Expressions (false, true, null, 0) count
+      as empty.
     required: false
     default: ""
 
@@ -33,6 +35,8 @@ runs:
         EDGE_APP_ID_INPUT: ${{ inputs.edge_app_id }}
         SCREENLY_API_TOKEN_INPUT: ${{ inputs.screenly_api_token }}
         ENVIRONMENT_INPUT: ${{ inputs.environment }}
+        EDGE_APP_NAME_INPUT: ${{ inputs.edge_app_name }}
+        EDGE_APP_TITLE_INPUT: ${{ inputs.edge_app_title }}
       run: |
         set -euo pipefail
 
@@ -40,6 +44,27 @@ runs:
           echo "::error::screenly_api_token is empty. Add GitHub secret SCREENLY_API_TOKEN for this environment (stage and production both need a token)."
           exit 1
         fi
+
+        # The name and title end up inside a double-quoted shell command run by
+        # screenly/cli, so reject characters that would break out of the quotes.
+        check_cli_arg() {
+          if [ -z "$2" ]; then
+            echo "::error::$1 is empty."
+            exit 1
+          fi
+          case "$2" in
+            *[\"\$\`\\]*)
+              echo "::error::$1 must not contain \", \$, \` or \\."
+              exit 1
+              ;;
+          esac
+          if [[ "$2" =~ [[:cntrl:]] ]]; then
+            echo "::error::$1 must not contain control characters (e.g. newlines)."
+            exit 1
+          fi
+        }
+        check_cli_arg edge_app_name "${EDGE_APP_NAME_INPUT}"
+        check_cli_arg edge_app_title "${EDGE_APP_TITLE_INPUT}"
 
         case "${ENVIRONMENT_INPUT}" in
           stage)
@@ -54,14 +79,27 @@ runs:
             ;;
         esac
 
+        # Apps with a build script are built and deployed from ./dist.
         HAS_BUILD_STEP=false
         if [ -f "package.json" ]; then
-          SCREENLY_DEP=$(jq -r '((.dependencies // {}) + (.devDependencies // {}))["@screenly/edge-apps"] // empty' package.json)
-          if [ -n "$SCREENLY_DEP" ]; then
+          BUILD_SCRIPT=$(jq -r '.scripts.build // empty' package.json)
+          if [ -n "$BUILD_SCRIPT" ]; then
             HAS_BUILD_STEP=true
           fi
         fi
         echo "has_build_step=$HAS_BUILD_STEP" >> "$GITHUB_OUTPUT"
+
+        # Apps without a build step are deployed from the repo root, and the
+        # CLI uploads every file there, hidden folders included. Keep git
+        # internals, workflows and dependencies out of the deployed app.
+        if [ "$HAS_BUILD_STEP" = false ]; then
+          if [ -s .ignore ] && [ -n "$(tail -c 1 .ignore)" ]; then
+            echo >> .ignore
+          fi
+          for pattern in .git/ .github/ .claude/ node_modules/; do
+            grep -qxF "$pattern" .ignore 2>/dev/null || echo "$pattern" >> .ignore
+          done
+        fi
         echo "MANIFEST_FILE_NAME=screenly.yml" >> "$GITHUB_ENV"
 
         # Trim whitespace; ignore Expression leftovers / placeholders.
@@ -72,16 +110,18 @@ runs:
             echo "edge_app_id is empty — first-time create (no EDGE_APP_ID export)."
             ;;
           *)
-            delimiter="ghadelim_${RANDOM}${RANDOM}${RANDOM}_$$"
-            echo "EDGE_APP_ID<<${delimiter}" >> "$GITHUB_ENV"
-            echo "${EDGE_APP_ID_TRIMMED}" >> "$GITHUB_ENV"
-            echo "${delimiter}" >> "$GITHUB_ENV"
-            echo "Using EDGE_APP_ID=${EDGE_APP_ID_TRIMMED}"
+            # Re-running initialize would create a second instance (and, if the
+            # var were later cleared, a second app). Deploys belong to update.
+            echo "::error::This environment is already initialized (edge_app_id is ${EDGE_APP_ID_TRIMMED}). Use the update action to deploy. To start over, delete the Edge App in Screenly and clear the ${ENVIRONMENT_INPUT} id variable first."
+            exit 1
             ;;
         esac
 
     - name: Verify Screenly API token
       shell: bash
+      env:
+        SCREENLY_API_TOKEN_INPUT: ${{ inputs.screenly_api_token }}
+        ENVIRONMENT_INPUT: ${{ inputs.environment }}
       run: |
         set -euo pipefail
         STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
@@ -89,11 +129,11 @@ runs:
           --max-time 30 \
           --retry 3 \
           --retry-delay 2 \
-          -H "Authorization: Token ${{ inputs.screenly_api_token }}" \
+          -H "Authorization: Token ${SCREENLY_API_TOKEN_INPUT}" \
           "$API_BASE_URL/api/v4.1/users/")
         echo "Auth check status: $STATUS"
         if [ "$STATUS" != "200" ]; then
-          echo "::error::SCREENLY_API_TOKEN validation failed for ${{ inputs.environment }} (HTTP $STATUS). Check the secret for this environment."
+          echo "::error::SCREENLY_API_TOKEN validation failed for ${ENVIRONMENT_INPUT} (HTTP $STATUS). Check the secret for this environment."
           exit 1
         fi
         echo "Token is valid"
@@ -113,6 +153,33 @@ runs:
         screenly_api_token: ${{ inputs.screenly_api_token }}
         cli_version: v26.9.0
         cli_commands: edge-app create --name="${{ inputs.edge_app_name }}" --in-place
+
+    # Print the id as soon as the app exists, so it isn't lost if a later
+    # step fails (the workspace, and the id in screenly.yml, are discarded).
+    - name: Report Edge App id
+      shell: bash
+      env:
+        ENVIRONMENT_INPUT: ${{ inputs.environment }}
+      run: |
+        set -euo pipefail
+        ID="$(grep -E '^id:[[:space:]]*' "$MANIFEST_FILE_NAME" | head -1 | awk '{print $2}' | tr -d "\"'" || true)"
+        if [ -z "$ID" ]; then
+          echo "::error::No id found in $MANIFEST_FILE_NAME after create."
+          exit 1
+        fi
+        if [ "$ENVIRONMENT_INPUT" = production ]; then
+          VAR_NAME=PRODUCTION_EDGE_APP_ID
+        else
+          VAR_NAME=STAGE_EDGE_APP_ID
+        fi
+        echo "::notice::Created Edge App id $ID. Set repo variable $VAR_NAME to this value."
+        {
+          echo "## Edge App id"
+          echo ""
+          echo "Created Edge App id: \`$ID\`"
+          echo ""
+          echo "Set repository variable \`$VAR_NAME\` to this value (Settings → Secrets and variables → Actions → Variables)."
+        } >> "$GITHUB_STEP_SUMMARY"
 
     - name: Build
       if: steps.detect.outputs.has_build_step == 'true'
@@ -149,5 +216,5 @@ runs:
       run: |
         cat instance.yml
         echo ""
-        echo "If this was a first-time create, copy the Edge App id from screenly.yml into"
-        echo "repo variable STAGE_EDGE_APP_ID or PRODUCTION_EDGE_APP_ID for this environment."
+        echo "Set repo variable STAGE_EDGE_APP_ID or PRODUCTION_EDGE_APP_ID for this environment"
+        echo "to the Edge App id shown in the job summary."

@@ -21,6 +21,9 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+
 run-name: Initializing ${{ inputs.edge_app_name }} in ${{ inputs.environment }}
 
 jobs:
@@ -28,9 +31,14 @@ jobs:
     name: Initializing ${{ inputs.edge_app_name }} in ${{ inputs.environment }}
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
+    # Same group as the update example, so initialize and deploys for one
+    # environment never run at the same time.
+    concurrency:
+      group: edge-app-${{ inputs.environment }}
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v7
-      - uses: Screenly/edge-apps-actions/initialize@v26.10.0
+      - uses: Screenly/edge-apps-actions/initialize@v26.10.1
         with:
           screenly_api_token: ${{ secrets.SCREENLY_API_TOKEN }}
           edge_app_name: ${{ inputs.edge_app_name }}
