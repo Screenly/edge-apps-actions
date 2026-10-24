@@ -28,6 +28,10 @@ jobs:
           delete_missing_settings: 'true'
           edge_app_id: ${{ vars.STAGE_EDGE_APP_ID }}
 
+  # The tag check below only catches mistakes: a tag push runs the workflow
+  # from the tagged commit. Restrict who can push v* tags with a tag ruleset
+  # and require reviewers on the production environment (see README,
+  # "Protecting production").
   deploy-production:
     name: Updating Edge App in production
     runs-on: ubuntu-latest
