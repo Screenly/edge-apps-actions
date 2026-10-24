@@ -1,0 +1,61 @@
+---
+# Catches a release whose pins don't match it. The reusable workflows call
+# this repo's actions at a fixed version, and the README/examples point apps
+# at one; all of those pins must be the same version, and must be bumped
+# whenever the shipped code changes.
+name: Release guard
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v[0-9]*'
+
+permissions:
+  contents: read
+
+jobs:
+  pins:
+    name: Version pins
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Check edge-apps-actions pins
+        run: |
+          set -euo pipefail
+          FILES=()
+          for f in .github/workflows/checks.yml .github/workflows/initialize.yml .github/workflows/update.yml examples README.md; do
+            if [ -e "$f" ]; then FILES+=("$f"); fi
+          done
+          PINS=$(grep -rhoE 'Screenly/edge-apps-actions/[A-Za-z0-9_./-]+@v[0-9][0-9.]*' "${FILES[@]}" | sed 's/.*@//' | sort -u)
+          COUNT=$(printf '%s\n' "$PINS" | grep -c . || true)
+          if [ "$COUNT" -ne 1 ]; then
+            echo "::error::Expected every Screenly/edge-apps-actions pin to use one version, found: $(echo $PINS)"
+            grep -rnoE 'Screenly/edge-apps-actions/[A-Za-z0-9_./-]+@v[0-9][0-9.]*' "${FILES[@]}"
+            exit 1
+          fi
+          PIN=$PINS
+          echo "All pins use $PIN"
+
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            if [ "$PIN" != "$GITHUB_REF_NAME" ]; then
+              echo "::error::Tag $GITHUB_REF_NAME, but the pins point at $PIN. This release's reusable workflows run the $PIN actions."
+              exit 1
+            fi
+            exit 0
+          fi
+
+          # Before tagging: if the pinned version is already released and the
+          # shipped code changed since then, the pins weren't bumped.
+          if git rev-parse -q --verify "refs/tags/$PIN" >/dev/null; then
+            SHIPPED=(checks initialize update .github/workflows/checks.yml .github/workflows/initialize.yml .github/workflows/update.yml)
+            if ! git diff --quiet "$PIN" HEAD -- "${SHIPPED[@]}"; then
+              echo "::error::The shipped actions/workflows changed since $PIN, but the pins still point at $PIN. Bump every pin to the next version (see CONTRIBUTING.md, 'Pushing tags')."
+              git diff --stat "$PIN" HEAD -- "${SHIPPED[@]}"
+              exit 1
+            fi
+          fi

@@ -18,6 +18,7 @@ This repo uses [Calendar Versioning](https://calver.org/) with `vYY.M.PATCH` tag
 
 Copy these into your app repo under `.github/workflows/`:
 
+- [`examples/checks.yml`](examples/checks.yml) — build, lint, format-check and test on pushes and pull requests (Bun apps)
 - [`examples/initialize-edge-app.yml`](examples/initialize-edge-app.yml) — manual create/deploy for stage or production
 - [`examples/update-edge-app.yml`](examples/update-edge-app.yml) — deploy stage on every push to the default branch (`main`/`master`) or a manual run from it (rolling); deploy production when a version tag like `v26.10.0` is pushed
 
@@ -148,6 +149,7 @@ They run in the app repo's context: the app's `vars`, environments (secrets, rev
 | Workflow | Inputs | What it does |
 | -------- | ------ | ------------ |
 | [`.github/workflows/update.yml`](.github/workflows/update.yml) | `delete_missing_settings` (boolean, default `true`) | **Stage** job: runs only for pushes and manual runs on the repo's default branch; other triggers are ignored. **Production** job: runs only for a pushed `v*` tag, and refuses tags whose commit is not on the default branch. |
+| [`.github/workflows/checks.yml`](.github/workflows/checks.yml) | `bun-version` (default `latest`) | Runs the `checks` action. No secrets. A newer push to the same branch or pull request cancels the older run. |
 | [`.github/workflows/initialize.yml`](.github/workflows/initialize.yml) | `environment`, `edge_app_name`, `edge_app_title` (all required) | Creates the Edge App and its first instance in the given environment, reading the id variable for that environment. |
 
 Both workflows:
