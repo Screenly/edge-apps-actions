@@ -35,4 +35,7 @@ jobs:
       environment: ${{ inputs.environment }}
       edge_app_name: ${{ inputs.edge_app_name }}
       edge_app_title: ${{ inputs.edge_app_title }}
-    secrets: inherit
+    # Pass only the token. It can live only on the stage/production
+    # environments; the reusable workflow's job picks the right one.
+    secrets:
+      SCREENLY_API_TOKEN: ${{ secrets.SCREENLY_API_TOKEN }}

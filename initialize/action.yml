@@ -138,6 +138,36 @@ runs:
         fi
         echo "Token is valid"
 
+    # A second Initialize run (e.g. dispatched twice) waits in the concurrency
+    # queue and would otherwise create a duplicate app, because the id variable
+    # isn't set yet. Refuse when an app with this name already exists. Fail-open:
+    # if the lookup itself fails, warn and continue rather than block.
+    - name: Check for an existing Edge App with this name
+      shell: bash
+      env:
+        SCREENLY_API_TOKEN_INPUT: ${{ inputs.screenly_api_token }}
+        ENVIRONMENT_INPUT: ${{ inputs.environment }}
+        EDGE_APP_NAME_INPUT: ${{ inputs.edge_app_name }}
+      run: |
+        set -uo pipefail
+        BODY=$(mktemp)
+        STATUS=$(curl -s -o "$BODY" -w "%{http_code}" \
+          --connect-timeout 10 \
+          --max-time 30 \
+          --retry 3 \
+          --retry-delay 2 \
+          -H "Authorization: Token ${SCREENLY_API_TOKEN_INPUT}" \
+          "$API_BASE_URL/v4/edge-apps?select=id,name&deleted=eq.false")
+        if [ "$STATUS" != "200" ] || ! EXISTING=$(jq -r --arg name "$EDGE_APP_NAME_INPUT" '[.[] | select(.name == $name) | .id] | join(", ")' "$BODY" 2>/dev/null); then
+          echo "::warning::Could not list existing Edge Apps (HTTP $STATUS); skipping the duplicate-name check."
+          exit 0
+        fi
+        if [ -n "$EXISTING" ]; then
+          echo "::error::An Edge App named '${EDGE_APP_NAME_INPUT}' already exists in ${ENVIRONMENT_INPUT} (id: ${EXISTING}). If it belongs to this repo, set the ${ENVIRONMENT_INPUT} id variable to that id instead of initializing again; otherwise choose a different name."
+          exit 1
+        fi
+        echo "No existing Edge App named '${EDGE_APP_NAME_INPUT}' in ${ENVIRONMENT_INPUT}."
+
     - name: Set up Bun
       if: steps.detect.outputs.has_build_step == 'true'
       uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0

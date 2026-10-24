@@ -22,4 +22,7 @@ jobs:
     # Stage on the default branch, production on v* tags. Concurrency, the
     # default-branch checks and permissions live in the reusable workflow.
     uses: Screenly/edge-apps-actions/.github/workflows/update.yml@v26.10.2
-    secrets: inherit
+    # Pass only the token. It can live only on the stage/production
+    # environments; the reusable workflow's job picks the right one.
+    secrets:
+      SCREENLY_API_TOKEN: ${{ secrets.SCREENLY_API_TOKEN }}

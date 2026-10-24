@@ -27,7 +27,8 @@ The examples are short callers of the [reusable workflows](#reusable-workflows) 
 jobs:
   update:
     uses: Screenly/edge-apps-actions/.github/workflows/update.yml@v26.10.2
-    secrets: inherit
+    secrets:
+      SCREENLY_API_TOKEN: ${{ secrets.SCREENLY_API_TOKEN }}
 ```
 
 The update example triggers on both `main` and `master`; the reusable workflow only deploys stage for the repo's default branch, so the file works unchanged in either kind of repo.
@@ -122,7 +123,16 @@ When deploying the repo root, the actions add `.git/`, `.github/`, `.claude/` an
 
 ## Reusable workflows
 
-Call these from an app repo with `uses:` at the job level and `secrets: inherit`. They run in the app repo's context: the app's `vars`, environments (secrets, reviewers, branch rules) and `github` event are used. **`secrets: inherit` is required:** GitHub only releases the app's `stage`/`production` environment secret to the called job when the caller passes secrets; without it `SCREENLY_API_TOKEN` is empty and the actions fail with "screenly_api_token is empty" ([GitHub Docs](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows)).
+Call these from an app repo with `uses:` at the job level, passing only the token (see the examples):
+
+```yaml
+    secrets:
+      SCREENLY_API_TOKEN: ${{ secrets.SCREENLY_API_TOKEN }}
+```
+
+They run in the app repo's context: the app's `vars`, environments (secrets, reviewers, branch rules) and `github` event are used. The token can exist only as a `stage`/`production` environment secret: GitHub releases the matching environment's value to the reusable workflow's job that sets `environment:`. Passing it is required (the workflows declare it `required: true`); if it's missing, the secret is empty and the actions fail with "screenly_api_token is empty" ([GitHub Docs](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows)). Passing it by name instead of `secrets: inherit` keeps the app's other secrets out of these workflows.
+
+`initialize` also refuses to create an app when one with the same name already exists in that environment, so a second Initialize run (e.g. dispatched twice) can't create a duplicate.
 
 | Workflow | Inputs | What it does |
 | -------- | ------ | ------------ |

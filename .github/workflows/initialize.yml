@@ -19,6 +19,13 @@ on:
         description: Display title for the Edge App instance
         type: string
         required: true
+    secrets:
+      SCREENLY_API_TOKEN:
+        description: >
+          Screenly API token. Pass the caller's secrets.SCREENLY_API_TOKEN;
+          GitHub then releases the app's stage/production environment secret
+          to the job that sets `environment:` here. No other secrets are passed.
+        required: true
 
 permissions:
   contents: read
