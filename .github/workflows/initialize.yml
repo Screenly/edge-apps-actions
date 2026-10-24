@@ -1,0 +1,47 @@
+---
+# Reusable workflow: create an Edge App and its first instance in stage or
+# production (once per environment). Call it from an app repo's
+# workflow_dispatch workflow; see examples/initialize-edge-app.yml.
+name: Initialize Edge App
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: Target environment (stage or production)
+        type: string
+        required: true
+      edge_app_name:
+        description: Edge App name (used for the CLI --name flag)
+        type: string
+        required: true
+      edge_app_title:
+        description: Display title for the Edge App instance
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  initialize:
+    name: Initialize in ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    # Separate from the update workflow's groups, which cancel in-progress
+    # runs: a push must never cancel initialize half-way (that could leave an
+    # app without its instance). Initialize is never cancelled by another one.
+    concurrency:
+      group: edge-app-initialize-${{ inputs.environment }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+      - uses: Screenly/edge-apps-actions/initialize@v26.10.2
+        with:
+          screenly_api_token: ${{ secrets.SCREENLY_API_TOKEN }}
+          edge_app_name: ${{ inputs.edge_app_name }}
+          edge_app_title: ${{ inputs.edge_app_title }}
+          environment: ${{ inputs.environment }}
+          # Empty on first create; once the matching var is set, the action
+          # refuses to run so a re-run can't create a duplicate app or instance.
+          edge_app_id: ${{ (inputs.environment == 'production' && vars.PRODUCTION_EDGE_APP_ID) || (inputs.environment == 'stage' && vars.STAGE_EDGE_APP_ID) || '' }}

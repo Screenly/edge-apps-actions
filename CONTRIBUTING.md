@@ -58,6 +58,8 @@ Only a **fixed (immutable)** tag is pushed per release, no floating tag is creat
 
 ### Pushing tags
 
+Before tagging, bump every `Screenly/edge-apps-actions/...@vYY.M.PATCH` pin to the version you are about to release, in the same PR: the reusable workflows in `.github/workflows/` (they call `initialize`/`update` at their own release version), the `examples/` and the README. A tag whose reusable workflows still point at the previous release would deploy with the old actions.
+
 After merging to `main`, pull the latest and tag the release. Replace `vYY.M.PATCH` with the version you are releasing:
 
 ```sh

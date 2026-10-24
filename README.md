@@ -2,7 +2,7 @@
 
 # Edge Apps GitHub Actions
 
-Reusable GitHub Actions that check, build and deploy [Screenly Edge Apps](https://developer.screenly.io/edge-apps/). Add them to an Edge App repo to:
+Reusable GitHub Actions and workflows that check, build and deploy [Screenly Edge Apps](https://developer.screenly.io/edge-apps/). Add them to an Edge App repo to:
 
 - **`checks`**: lint, format-check, build and test the app on every pull request.
 - **`initialize`**: create the Edge App and its first instance in stage or production (once per environment).
@@ -21,7 +21,16 @@ Copy these into your app repo under `.github/workflows/`:
 - [`examples/initialize-edge-app.yml`](examples/initialize-edge-app.yml) — manual create/deploy for stage or production
 - [`examples/update-edge-app.yml`](examples/update-edge-app.yml) — deploy stage on every push to the default branch (`main`/`master`) or a manual run from it (rolling); deploy production when a version tag like `v26.10.0` is pushed
 
-The update example triggers on both `main` and `master` and only deploys stage for the repo's default branch, so it works unchanged in either kind of repo. Both examples run one deploy per environment at a time (`concurrency`) and use a read-only `GITHUB_TOKEN`.
+The examples are short callers of the [reusable workflows](#reusable-workflows) in this repo, so the deploy logic lives in one place and every app gets changes by bumping one version:
+
+```yaml
+jobs:
+  update:
+    uses: Screenly/edge-apps-actions/.github/workflows/update.yml@v26.10.2
+    secrets: inherit
+```
+
+The update example triggers on both `main` and `master`; the reusable workflow only deploys stage for the repo's default branch, so the file works unchanged in either kind of repo.
 
 To release to production, tag the commit on `main`/`master` and push the tag. The production job refuses to deploy tags whose commit is not on the repo's default branch. We recommend the same CalVer `vYY.M.PATCH` scheme for app releases (e.g. `v26.10.0` for the first release in October 2026, `v26.10.1` for the next one that month):
 
@@ -48,8 +57,8 @@ Rulesets apply to the repository they are set on, so each app repo needs its own
 
 ## Setup checklist
 
-1. Create GitHub Environments named `stage` and `production` (workflows set `environment:` to these names).
-2. Add secret `SCREENLY_API_TOKEN` for **both** environments (repo secret shared by both, or the same secret name on each environment when tokens differ).
+1. Create GitHub Environments named `stage` and `production` (the reusable workflows set `environment:` to these names).
+2. Add secret `SCREENLY_API_TOKEN` as an **environment secret** on both `stage` and `production` (see [GitHub secrets](#github-secrets)).
 3. Do **not** create `STAGE_EDGE_APP_ID` / `PRODUCTION_EDGE_APP_ID` yet.
 4. Run **Initialize Edge App** for stage, then for production.
 5. After each successful initialize, copy the printed Edge App id into the matching repo variable.
@@ -58,7 +67,7 @@ Rulesets apply to the repository they are set on, so each app repo needs its own
 
 ## GitHub secrets
 
-Both **stage** and **production** need a Screenly API token. Add `SCREENLY_API_TOKEN` as a repository secret (shared by both), or as an environment secret on each of the `stage` and `production` GitHub Environments when the tokens differ.
+Both **stage** and **production** need a Screenly API token. Add `SCREENLY_API_TOKEN` as an **environment secret** on each of the `stage` and `production` GitHub Environments. An environment secret is only released to a job after that environment's rules pass (allowed branches/tags, required reviewers). A repository secret is readable by a workflow on any branch, which bypasses production approval, so don't store the production token there.
 
 | Secret | Required by | Description |
 | ------ | ----------- | ----------- |
@@ -89,14 +98,33 @@ Use **only** these GitHub Actions repository variables for Edge App ids (never s
 
 When deploying the repo root, the actions add `.git/`, `.github/`, `.claude/` and `node_modules/` to `.ignore` (in the runner's workspace only) so they are not uploaded. The CLI uploads every other file in the root; list anything else that isn't part of the app in your `.ignore`.
 
+## Reusable workflows
+
+Call these from an app repo with `uses:` at the job level and `secrets: inherit`. They run in the app repo's context: the app's `vars`, environment secrets and `github` event are used.
+
+| Workflow | Inputs | What it does |
+| -------- | ------ | ------------ |
+| [`.github/workflows/update.yml`](.github/workflows/update.yml) | `delete_missing_settings` (boolean, default `true`) | **Stage** job: runs only for the repo's default branch (pushes and manual runs). **Production** job: runs only for a pushed `v*` tag, and refuses tags whose commit is not on the default branch. |
+| [`.github/workflows/initialize.yml`](.github/workflows/initialize.yml) | `environment`, `edge_app_name`, `edge_app_title` (all required) | Creates the Edge App and its first instance in the given environment, reading the id variable for that environment. |
+
+Both workflows:
+
+- run one job per environment at a time. **Update** uses the groups `edge-app-stage` / `edge-app-production` with `cancel-in-progress: true`: a newer push or tag cancels the deploy in progress (or one still waiting for production approval), so runs don't pile up and the latest change wins. A cancelled deploy can stop part-way; the run that cancelled it deploys straight after. **Initialize** uses its own groups (`edge-app-initialize-stage` / `-production`) and is never cancelled by a deploy.
+- use a read-only `GITHUB_TOKEN` (`permissions: contents: read`).
+- pin `initialize` / `update` to the same release as the workflow itself.
+
+Don't add a `concurrency` group with the same name to the calling job; caller and called jobs in the same group block each other.
+
 ## Available Actions
+
+The reusable workflows use these actions. You can also call them directly from your own workflow steps.
 
 ### `checks`
 
 Builds, lints, formats, and tests a Screenly Edge App.
 
 ```yaml
-- uses: Screenly/edge-apps-actions/checks@v26.10.1
+- uses: Screenly/edge-apps-actions/checks@v26.10.2
   with:
     bun-version: latest # optional
 ```
@@ -110,7 +138,7 @@ Builds, lints, formats, and tests a Screenly Edge App.
 Creates and deploys a new Screenly Edge App instance.
 
 ```yaml
-- uses: Screenly/edge-apps-actions/initialize@v26.10.1
+- uses: Screenly/edge-apps-actions/initialize@v26.10.2
   with:
     screenly_api_token: ${{ secrets.SCREENLY_API_TOKEN }}
     edge_app_name: my-edge-app
@@ -140,7 +168,7 @@ Requires `screenly/cli` `v26.9.0` or later; see the [`v26.9.0` release notes](ht
 Builds and deploys an existing Screenly Edge App.
 
 ```yaml
-- uses: Screenly/edge-apps-actions/update@v26.10.1
+- uses: Screenly/edge-apps-actions/update@v26.10.2
   with:
     screenly_api_token: ${{ secrets.SCREENLY_API_TOKEN }}
     environment: stage # or production
