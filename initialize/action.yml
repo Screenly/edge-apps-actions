@@ -140,8 +140,8 @@ runs:
 
     # A second Initialize run (e.g. dispatched twice) waits in the concurrency
     # queue and would otherwise create a duplicate app, because the id variable
-    # isn't set yet. Refuse when an app with this name already exists. Fail-open:
-    # if the lookup itself fails, warn and continue rather than block.
+    # isn't set yet. Refuse when an app with this name already exists. Fail
+    # closed: if the existing apps can't be listed, stop instead of creating.
     - name: Check for an existing Edge App with this name
       shell: bash
       env:
@@ -157,11 +157,12 @@ runs:
           --retry 3 \
           --retry-delay 2 \
           -H "Authorization: Token ${SCREENLY_API_TOKEN_INPUT}" \
-          "$API_BASE_URL/v4/edge-apps?select=id,name&deleted=eq.false")
-        if [ "$STATUS" != "200" ] || ! EXISTING=$(jq -r --arg name "$EDGE_APP_NAME_INPUT" '[.[] | select(.name == $name) | .id] | join(", ")' "$BODY" 2>/dev/null); then
-          echo "::warning::Could not list existing Edge Apps (HTTP $STATUS); skipping the duplicate-name check."
-          exit 0
+          "$API_BASE_URL/v4/edge-apps?select=id,name&deleted=eq.false") || true
+        if [ "$STATUS" != "200" ] || ! jq -e 'type == "array"' "$BODY" >/dev/null 2>&1; then
+          echo "::error::Could not list existing Edge Apps in ${ENVIRONMENT_INPUT} (HTTP $STATUS), so a duplicate can't be ruled out. Nothing was created; re-run Initialize to try again."
+          exit 1
         fi
+        EXISTING=$(jq -r --arg name "$EDGE_APP_NAME_INPUT" '[.[] | select(.name == $name) | .id] | join(", ")' "$BODY")
         if [ -n "$EXISTING" ]; then
           echo "::error::An Edge App named '${EDGE_APP_NAME_INPUT}' already exists in ${ENVIRONMENT_INPUT} (id: ${EXISTING}). If it belongs to this repo, set the ${ENVIRONMENT_INPUT} id variable to that id instead of initializing again; otherwise choose a different name."
           exit 1

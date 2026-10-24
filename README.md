@@ -132,7 +132,7 @@ Call these from an app repo with `uses:` at the job level, passing only the toke
 
 They run in the app repo's context: the app's `vars`, environments (secrets, reviewers, branch rules) and `github` event are used. The token can exist only as a `stage`/`production` environment secret: GitHub releases the matching environment's value to the reusable workflow's job that sets `environment:`. Passing it is required (the workflows declare it `required: true`); if it's missing, the secret is empty and the actions fail with "screenly_api_token is empty" ([GitHub Docs](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows)). Passing it by name instead of `secrets: inherit` keeps the app's other secrets out of these workflows.
 
-`initialize` also refuses to create an app when one with the same name already exists in that environment, so a second Initialize run (e.g. dispatched twice) can't create a duplicate.
+`initialize` also lists the environment's Edge Apps before creating one and refuses when an app with the same name already exists, so a second Initialize run (e.g. dispatched twice) doesn't create a duplicate. If the list can't be fetched, it stops without creating anything; re-run it.
 
 | Workflow | Inputs | What it does |
 | -------- | ------ | ------------ |
