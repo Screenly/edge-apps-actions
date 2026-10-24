@@ -162,7 +162,10 @@ runs:
           echo "::error::Could not list existing Edge Apps in ${ENVIRONMENT_INPUT} (HTTP $STATUS), so a duplicate can't be ruled out. Nothing was created; re-run Initialize to try again."
           exit 1
         fi
-        EXISTING=$(jq -r --arg name "$EDGE_APP_NAME_INPUT" '[.[] | select(.name == $name) | .id] | join(", ")' "$BODY")
+        if ! EXISTING=$(jq -r --arg name "$EDGE_APP_NAME_INPUT" '[.[] | select(type == "object" and .name == $name) | .id | tostring] | join(", ")' "$BODY"); then
+          echo "::error::Could not read the list of existing Edge Apps in ${ENVIRONMENT_INPUT}, so a duplicate can't be ruled out. Nothing was created; re-run Initialize to try again."
+          exit 1
+        fi
         if [ -n "$EXISTING" ]; then
           echo "::error::An Edge App named '${EDGE_APP_NAME_INPUT}' already exists in ${ENVIRONMENT_INPUT} (id: ${EXISTING}). If it belongs to this repo, set the ${ENVIRONMENT_INPUT} id variable to that id instead of initializing again; otherwise choose a different name."
           exit 1
