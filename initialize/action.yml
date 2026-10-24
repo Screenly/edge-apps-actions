@@ -172,13 +172,13 @@ runs:
         else
           VAR_NAME=STAGE_EDGE_APP_ID
         fi
-        echo "::notice::Created Edge App id $ID. Set repo variable $VAR_NAME to this value."
+        echo "::notice::Created Edge App id $ID. Once this run has finished successfully, set repo variable $VAR_NAME to this value."
         {
           echo "## Edge App id"
           echo ""
           echo "Created Edge App id: \`$ID\`"
           echo ""
-          echo "Set repository variable \`$VAR_NAME\` to this value (Settings → Secrets and variables → Actions → Variables)."
+          echo "Once this run has finished successfully, set repository variable \`$VAR_NAME\` to this value (Settings → Secrets and variables → Actions → Variables). Setting it earlier lets a deploy start while this run is still building and creating the instance."
         } >> "$GITHUB_STEP_SUMMARY"
 
     - name: Build

@@ -83,7 +83,7 @@ Rulesets apply to the repository they are set on, so each app repo needs its own
 2. Add secret `SCREENLY_API_TOKEN` as an **environment secret** on both `stage` and `production` (see [GitHub secrets](#github-secrets)).
 3. Do **not** create `STAGE_EDGE_APP_ID` / `PRODUCTION_EDGE_APP_ID` yet.
 4. Run **Initialize Edge App** for stage, then for production.
-5. After each successful initialize, copy the printed Edge App id into the matching repo variable.
+5. After each initialize run **has finished successfully**, copy the Edge App id from its job summary into the matching repo variable.
 6. Use **Update Edge App** for later deploys (requires those vars to be set).
 7. Protect production with a `v*` tag ruleset, a tag-only `production` environment and required reviewers (see [Protecting production](#protecting-production)).
 
@@ -122,7 +122,7 @@ When deploying the repo root, the actions add `.git/`, `.github/`, `.claude/` an
 
 ## Reusable workflows
 
-Call these from an app repo with `uses:` at the job level and `secrets: inherit`. They run in the app repo's context: the app's `vars`, environment secrets and `github` event are used.
+Call these from an app repo with `uses:` at the job level and `secrets: inherit`. They run in the app repo's context: the app's `vars`, environments (secrets, reviewers, branch rules) and `github` event are used. **`secrets: inherit` is required:** GitHub only releases the app's `stage`/`production` environment secret to the called job when the caller passes secrets; without it `SCREENLY_API_TOKEN` is empty and the actions fail with "screenly_api_token is empty" ([GitHub Docs](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows)).
 
 | Workflow | Inputs | What it does |
 | -------- | ------ | ------------ |
