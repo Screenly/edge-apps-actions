@@ -30,11 +30,11 @@ jobs:
 
 ## Release an app
 
-- **Stage** deploys automatically on every push (or manual run) on the default branch (`main`/`master`). Other branches never deploy.
+- **Stage** deploys on every push (or manual run) on the default branch (`main`/`master`), after approval if the `stage` environment has required reviewers. Other branches never deploy.
 - **Production** deploys when you push a `v*` tag on the default branch, after a reviewer approves. We recommend [CalVer](https://calver.org/) `vYY.M.PATCH`:
 
 ```sh
-git checkout main && git pull
+git checkout main && git pull   # or master
 git tag v26.10.0 && git push origin v26.10.0
 gh release create v26.10.0 --verify-tag --generate-notes --title v26.10.0
 ```
@@ -52,7 +52,7 @@ updates:
     directory: '/'
     schedule:
       interval: 'weekly'
-    target-branch: 'development' # the branch you merge into before main
+    target-branch: 'development' # the branch you merge into before the default branch
     groups:
       github-actions:
         patterns: ['*']
@@ -70,7 +70,7 @@ The workflow checks only catch mistakes; whoever pushes a tag controls the workf
 
 ## How it works
 
-- **One deploy at a time per environment.** A newer push or tag cancels the deploy in progress (or one waiting for approval), so the latest change wins. A cancelled deploy can stop part-way; the newer run deploys right after. Initialize is never cancelled.
+- **One deploy at a time per environment.** A newer push or tag cancels the deploy in progress (or one waiting for approval), so the latest change wins. A cancelled deploy can stop part-way; the newer run fixes it once it deploys (after approval, if the environment requires it). Initialize is never cancelled.
 - **Production tag check.** The tag's commit must be on the default branch.
 - **Plain HTML apps** deploy the repo root; `.git/`, `.github/`, `.claude/` and `node_modules/` are always excluded. List anything else that isn't part of the app in `.ignore`.
 - **Initialize safeguards.** It refuses to run when the environment's id variable is already set, or when an app with the same name already exists (so a double-click can't create a duplicate). If it can't check, it stops without creating anything.
@@ -84,7 +84,7 @@ The workflow checks only catch mistakes; whoever pushes a tag controls the workf
 | `screenly_api_token is empty` / `validation failed` | Add or fix `SCREENLY_API_TOKEN` on that environment. |
 | `This environment is already initialized` | Nothing to do; use Update to deploy. |
 | `An Edge App named … already exists` | If a previous Initialize created it and then **failed**, delete that app and re-run Initialize (below). If it's this repo's working app, set the id variable instead. |
-| `Tag … is not on main` | Tag a commit that's on the default branch. |
+| `Tag … is not on <default branch>` | Tag a commit that's on the default branch (`main` or `master`). |
 
 **Recovering from a failed Initialize:** if Initialize created the app but a later step failed, the app has no instance. Don't set the id variable (Update never creates the instance). Delete the app and re-run Initialize:
 
