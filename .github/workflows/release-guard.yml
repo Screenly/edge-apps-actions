@@ -31,11 +31,14 @@ jobs:
           for f in .github/workflows/checks.yml .github/workflows/initialize.yml .github/workflows/update.yml examples README.md; do
             if [ -e "$f" ]; then FILES+=("$f"); fi
           done
-          PINS=$(grep -rhoE 'Screenly/edge-apps-actions/[A-Za-z0-9_./-]+@v[0-9][0-9.]*' "${FILES[@]}" | sed 's/.*@//' | sort -u)
+          # Take each ref whole (up to whitespace, a quote, backtick or
+          # bracket), so @main or @v26.10.2-rc.1 can't hide behind a match.
+          REF_RE='Screenly/edge-apps-actions/[^@[:space:]]+@[^[:space:]"'"'"'`)>]+'
+          PINS=$(grep -rhoE "$REF_RE" "${FILES[@]}" | sed 's/.*@//' | sort -u)
           COUNT=$(printf '%s\n' "$PINS" | grep -c . || true)
-          if [ "$COUNT" -ne 1 ]; then
-            echo "::error::Expected every Screenly/edge-apps-actions pin to use one version, found: $(echo $PINS)"
-            grep -rnoE 'Screenly/edge-apps-actions/[A-Za-z0-9_./-]+@v[0-9][0-9.]*' "${FILES[@]}"
+          if [ "$COUNT" -ne 1 ] || ! [[ "$PINS" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Expected every Screenly/edge-apps-actions ref to be one exact vYY.M.PATCH version, found: $(echo $PINS)"
+            grep -rnoE "$REF_RE" "${FILES[@]}"
             exit 1
           fi
           PIN=$PINS
