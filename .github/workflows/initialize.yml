@@ -35,9 +35,8 @@ jobs:
     name: Initialize in ${{ inputs.environment }}
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
-    # Separate from the update workflow's groups, which cancel in-progress
-    # runs: a push must never cancel initialize half-way (that could leave an
-    # app without its instance). Initialize is never cancelled by another one.
+    # Its own group, so it never queues behind a deploy waiting for approval.
+    # Never cancelled half-way (that could leave an app without its instance).
     concurrency:
       group: edge-app-initialize-${{ inputs.environment }}
       cancel-in-progress: false

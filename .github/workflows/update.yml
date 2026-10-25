@@ -31,13 +31,14 @@ jobs:
     # branch; any other trigger a caller adds (e.g. schedule) is ignored.
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     environment: stage
-    # One deploy per environment at a time: a newer run cancels the one in
-    # progress (or waiting for approval), so pushes don't pile up and the
-    # latest commit wins. A cancelled deploy can stop part-way; the newer run
-    # that cancelled it deploys right after and brings the app up to date.
+    # One deploy per environment at a time, and a running deploy is never
+    # cancelled: one stopped between publish and promotion can leave the app
+    # on the old revision while a later deploy of the same files reports
+    # success. A newer run queues until this one finishes or is rejected;
+    # GitHub keeps only the newest queued run.
     concurrency:
       group: edge-app-stage
-      cancel-in-progress: true
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: Screenly/edge-apps-actions/update@v26.10.2
@@ -56,9 +57,10 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && !github.event.deleted && startsWith(github.ref, 'refs/tags/v')
     environment: production
+    # Same queueing as stage; see the comment there.
     concurrency:
       group: edge-app-production
-      cancel-in-progress: true
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

@@ -70,7 +70,7 @@ The workflow checks only catch mistakes; whoever pushes a tag controls the workf
 
 ## How it works
 
-- **One deploy at a time per environment.** A newer push or tag cancels the deploy in progress (or one waiting for approval), so the latest change wins. A cancelled deploy can stop part-way; the newer run fixes it once it deploys (after approval, if the environment requires it). Initialize is never cancelled.
+- **One deploy at a time per environment.** A running deploy is never cancelled. A newer push or tag waits until the current run finishes or is rejected, and only the newest waiting run is kept. If an older run is still waiting for approval, reject it so the newest one goes next.
 - **Production tag check.** The tag's commit must be on the default branch.
 - **Plain HTML apps** deploy the repo root; `.git/`, `.github/`, `.claude/` and `node_modules/` are always excluded. List anything else that isn't part of the app in `.ignore`.
 - **Initialize safeguards.** It refuses to run when the environment's id variable is already set, or when an app with the same name already exists (so a double-click can't create a duplicate). If it can't check, it stops without creating anything.
