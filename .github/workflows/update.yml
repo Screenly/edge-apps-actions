@@ -1,23 +1,21 @@
 ---
-# Reusable workflow: deploy an Edge App to stage (default branch) or
-# production (v* tag on the default branch). Call it from an app repo; see
-# examples/update-edge-app.yml.
 name: Update Edge App
 
 on:
   workflow_call:
     inputs:
       delete_missing_settings:
-        description: Delete settings that exist on the server but not in the manifest
+        description: >
+          Delete settings that exist on the server but not in the manifest.
+          Defaults to true here, as the app callers always passed, so the
+          manifest stays the source of truth; the update action itself
+          defaults to false for direct use.
         type: boolean
         required: false
         default: true
     secrets:
       SCREENLY_API_TOKEN:
-        description: >
-          Screenly API token. Pass the caller's secrets.SCREENLY_API_TOKEN;
-          GitHub then releases the app's stage/production environment secret
-          to the job that sets `environment:` here. No other secrets are passed.
+        description: Screenly API token (the caller's secrets.SCREENLY_API_TOKEN)
         required: true
 
 permissions:
@@ -31,11 +29,7 @@ jobs:
     # branch; any other trigger a caller adds (e.g. schedule) is ignored.
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     environment: stage
-    # One deploy per environment at a time, and a running deploy is never
-    # cancelled: one stopped between publish and promotion can leave the app
-    # on the old revision while a later deploy of the same files reports
-    # success. A newer run queues until this one finishes or is rejected;
-    # GitHub keeps only the newest queued run.
+    # Never cancel a running deploy: one stopped between publish and promotion leaves the old revision live.
     concurrency:
       group: edge-app-stage
       cancel-in-progress: false
@@ -48,16 +42,11 @@ jobs:
           delete_missing_settings: ${{ inputs.delete_missing_settings }}
           edge_app_id: ${{ vars.STAGE_EDGE_APP_ID }}
 
-  # The tag check below only catches mistakes: a tag push runs the caller
-  # workflow from the tagged commit. Restrict who can push v* tags with a tag
-  # ruleset and require reviewers on the production environment (see README,
-  # "Protecting production").
   deploy-production:
     name: Deploy to production
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && !github.event.deleted && startsWith(github.ref, 'refs/tags/v')
     environment: production
-    # Same queueing as stage; see the comment there.
     concurrency:
       group: edge-app-production
       cancel-in-progress: false
@@ -65,6 +54,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+      # Only catches mistakes; the tag ruleset and reviewers enforce it (README, "Protect production").
       - name: Verify tag is on the default branch
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}

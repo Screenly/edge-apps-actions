@@ -18,6 +18,4 @@ permissions:
 
 jobs:
   checks:
-    # Bun apps only (needs package.json with format:check, lint, build and
-    # test scripts). No secrets are passed: checks never deploy.
     uses: Screenly/edge-apps-actions/.github/workflows/checks.yml@v26.10.2

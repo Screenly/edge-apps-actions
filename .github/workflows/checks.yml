@@ -1,6 +1,4 @@
 ---
-# Reusable workflow: build, lint, format-check and test an Edge App. Call it
-# from an app repo on pushes and pull requests; see examples/checks.yml.
 name: Checks
 
 on:
@@ -19,8 +17,6 @@ jobs:
   checks:
     name: Checks
     runs-on: ubuntu-latest
-    # A newer push to the same branch or pull request cancels the older run;
-    # checks don't deploy anything, so cancelling is always safe.
     concurrency:
       group: edge-app-checks-${{ github.ref }}
       cancel-in-progress: true

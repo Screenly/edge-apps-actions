@@ -28,14 +28,10 @@ run-name: Initializing ${{ inputs.edge_app_name }} in ${{ inputs.environment }}
 
 jobs:
   initialize:
-    # First create: leave STAGE_EDGE_APP_ID / PRODUCTION_EDGE_APP_ID unset.
-    # After create: set the matching var to the id in the job summary.
     uses: Screenly/edge-apps-actions/.github/workflows/initialize.yml@v26.10.2
     with:
       environment: ${{ inputs.environment }}
       edge_app_name: ${{ inputs.edge_app_name }}
       edge_app_title: ${{ inputs.edge_app_title }}
-    # Pass only the token. It can live only on the stage/production
-    # environments; the reusable workflow's job picks the right one.
     secrets:
       SCREENLY_API_TOKEN: ${{ secrets.SCREENLY_API_TOKEN }}

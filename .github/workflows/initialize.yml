@@ -1,7 +1,4 @@
 ---
-# Reusable workflow: create an Edge App and its first instance in stage or
-# production (once per environment). Call it from an app repo's
-# workflow_dispatch workflow; see examples/initialize-edge-app.yml.
 name: Initialize Edge App
 
 on:
@@ -21,10 +18,7 @@ on:
         required: true
     secrets:
       SCREENLY_API_TOKEN:
-        description: >
-          Screenly API token. Pass the caller's secrets.SCREENLY_API_TOKEN;
-          GitHub then releases the app's stage/production environment secret
-          to the job that sets `environment:` here. No other secrets are passed.
+        description: Screenly API token (the caller's secrets.SCREENLY_API_TOKEN)
         required: true
 
 permissions:
@@ -35,8 +29,7 @@ jobs:
     name: Initialize in ${{ inputs.environment }}
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
-    # Its own group, so it never queues behind a deploy waiting for approval.
-    # Never cancelled half-way (that could leave an app without its instance).
+    # Own group on purpose: in the deploy group, a newer push would replace a queued Initialize.
     concurrency:
       group: edge-app-initialize-${{ inputs.environment }}
       cancel-in-progress: false
@@ -48,6 +41,4 @@ jobs:
           edge_app_name: ${{ inputs.edge_app_name }}
           edge_app_title: ${{ inputs.edge_app_title }}
           environment: ${{ inputs.environment }}
-          # Empty on first create; once the matching var is set, the action
-          # refuses to run so a re-run can't create a duplicate app or instance.
           edge_app_id: ${{ (inputs.environment == 'production' && vars.PRODUCTION_EDGE_APP_ID) || (inputs.environment == 'stage' && vars.STAGE_EDGE_APP_ID) || '' }}

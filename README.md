@@ -52,7 +52,7 @@ updates:
     directory: '/'
     schedule:
       interval: 'weekly'
-    target-branch: 'development' # the branch you merge into before the default branch
+    target-branch: 'development' # optional: drop this line if the repo has no development branch
     groups:
       github-actions:
         patterns: ['*']
@@ -71,6 +71,7 @@ The workflow checks only catch mistakes; whoever pushes a tag controls the workf
 ## How it works
 
 - **One deploy at a time per environment.** A running deploy is never cancelled. A newer push or tag waits until the current run finishes or is rejected, and only the newest waiting run is kept. If an older run is still waiting for approval, reject it so the newest one goes next.
+- **Initialize has its own queue**, so a deploy push can't replace a queued Initialize. That's also why the id variable must be set only after Initialize has finished: Update can't run without it.
 - **Production tag check.** The tag's commit must be on the default branch.
 - **Plain HTML apps** deploy the repo root; `.git/`, `.github/`, `.claude/` and `node_modules/` are always excluded. List anything else that isn't part of the app in `.ignore`.
 - **Initialize safeguards.** It refuses to run when the environment's id variable is already set, or when an app with the same name already exists (so a double-click can't create a duplicate). If it can't check, it stops without creating anything.

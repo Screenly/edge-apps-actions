@@ -4,8 +4,6 @@ name: Update Edge App
 on:
   workflow_dispatch:
   push:
-    # Both are listed so the file works unchanged in main- and master-based
-    # repos; the reusable workflow only deploys stage for the default branch.
     branches:
       - main
       - master
@@ -19,10 +17,6 @@ run-name: Updating Edge App in ${{ (github.event_name == 'push' && !github.event
 
 jobs:
   update:
-    # Stage on the default branch, production on v* tags. Concurrency, the
-    # default-branch checks and permissions live in the reusable workflow.
     uses: Screenly/edge-apps-actions/.github/workflows/update.yml@v26.10.2
-    # Pass only the token. It can live only on the stage/production
-    # environments; the reusable workflow's job picks the right one.
     secrets:
       SCREENLY_API_TOKEN: ${{ secrets.SCREENLY_API_TOKEN }}
