@@ -39,7 +39,9 @@ git tag v26.10.0 && git push origin v26.10.0
 gh release create v26.10.0 --verify-tag --generate-notes --title v26.10.0
 ```
 
-To redo a failed or cancelled production deploy, re-run the latest tag's workflow run; you don't need a new tag.
+To redo a failed or cancelled production deploy, re-run the latest tag's workflow run; you don't need a new tag. Don't cancel a deploy that's already running.
+
+> **Check the live revision after a re-run.** If the earlier run stopped after publishing but before promoting to `stable`, `screenly/cli` v26.9.0 sees no file changes on the re-run, skips promotion and still reports success. Make sure the app is on the new revision in Screenly. If it isn't, push a new tag with a change to the app's files; that creates and promotes a new revision.
 
 ## Keep it up to date
 
