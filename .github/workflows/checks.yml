@@ -1,0 +1,27 @@
+---
+name: Checks
+
+on:
+  workflow_call:
+    inputs:
+      bun-version:
+        description: Bun version to use
+        type: string
+        required: false
+        default: latest
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Checks
+    runs-on: ubuntu-latest
+    concurrency:
+      group: edge-app-checks-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: Screenly/edge-apps-actions/checks@v26.10.2
+        with:
+          bun-version: ${{ inputs.bun-version }}

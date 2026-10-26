@@ -1,0 +1,44 @@
+---
+name: Initialize Edge App
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: Target environment (stage or production)
+        type: string
+        required: true
+      edge_app_name:
+        description: Edge App name (used for the CLI --name flag)
+        type: string
+        required: true
+      edge_app_title:
+        description: Display title for the Edge App instance
+        type: string
+        required: true
+    secrets:
+      SCREENLY_API_TOKEN:
+        description: Screenly API token (the caller's secrets.SCREENLY_API_TOKEN)
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  initialize:
+    name: Initialize in ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    # Own group on purpose: in the deploy group, a newer push would replace a queued Initialize.
+    concurrency:
+      group: edge-app-initialize-${{ inputs.environment }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: Screenly/edge-apps-actions/initialize@v26.10.2
+        with:
+          screenly_api_token: ${{ secrets.SCREENLY_API_TOKEN }}
+          edge_app_name: ${{ inputs.edge_app_name }}
+          edge_app_title: ${{ inputs.edge_app_title }}
+          environment: ${{ inputs.environment }}
+          edge_app_id: ${{ (inputs.environment == 'production' && vars.PRODUCTION_EDGE_APP_ID) || (inputs.environment == 'stage' && vars.STAGE_EDGE_APP_ID) || '' }}
