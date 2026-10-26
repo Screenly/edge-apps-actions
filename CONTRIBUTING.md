@@ -48,6 +48,17 @@ We welcome contributions from the community! To keep the codebase healthy and ch
 3. Open a pull request against `main`.
 4. Once merged, tag the release (see below).
 
+## Scripts and tests
+
+The shell logic the actions run lives in `scripts/` (both actions call it through `$GITHUB_ACTION_PATH/../scripts`), so a fix reaches both. The reusable workflows in `.github/workflows/` can't use it this way, because `./` there is the calling app's checkout; keep them script-free.
+
+Tests live in `tests/` and run on every pull request (the **Tests** workflow). Run them locally with:
+
+```sh
+shellcheck scripts/*.sh
+python3 -m unittest discover -s tests -v
+```
+
 ## Tagging and Releases
 
 This repo follows [Calendar Versioning](https://calver.org/) using a `YY.M.PATCH` scheme (e.g. `v26.8.0`), a SemVer-compatible variant of CalVer: `YY` is the last two digits of the year, `M` is the month (both non-zero-padded, e.g. `8` for August, not `08`), and `PATCH` resets to `0` for the first release of a given year/month and increments for any additional release within that same month. Git tags are always `v`-prefixed (e.g. `v26.8.0`).
@@ -60,7 +71,7 @@ Only a **fixed (immutable)** tag is pushed per release, no floating tag is creat
 
 Before tagging, bump every `Screenly/edge-apps-actions/...@vYY.M.PATCH` pin to the version you are about to release, in the same PR: the reusable workflows in `.github/workflows/` (they call `initialize`/`update` at their own release version), the `examples/` and the README. A tag whose reusable workflows still point at the previous release would deploy with the old actions.
 
-The **Release guard** workflow enforces this. On pull requests and `main` it fails when the pins don't all use one version, or when the shipped code (`checks/`, `initialize/`, `update/` and the reusable workflows) changed since the pinned release. On a tag push it fails when the tag doesn't match the pins.
+The **Release guard** workflow (`scripts/check_pins.py`) enforces this. On pull requests and `main` it fails when the pins aren't all one exact `vYY.M.PATCH` version, or when the shipped code (`checks/`, `initialize/`, `update/`, `scripts/` and the reusable workflows) changed since the pinned release. On a tag push it fails when the tag doesn't match the pins.
 
 After merging to `main`, pull the latest and tag the release. Replace `vYY.M.PATCH` with the version you are releasing:
 
