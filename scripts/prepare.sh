@@ -58,8 +58,15 @@ esac
 
 # Apps with a build script are built and deployed from ./dist.
 HAS_BUILD_STEP=false
-if [ -f package.json ] && [ -n "$(jq -r '.scripts.build // empty' package.json)" ]; then
-  HAS_BUILD_STEP=true
+if [ -f package.json ]; then
+  # A parse error must stop here, not fall back to deploying the repo root.
+  if ! BUILD_SCRIPT=$(jq -r '.scripts.build // empty' package.json); then
+    echo "::error::Could not read scripts.build from package.json."
+    exit 1
+  fi
+  if [ -n "$BUILD_SCRIPT" ]; then
+    HAS_BUILD_STEP=true
+  fi
 fi
 echo "has_build_step=$HAS_BUILD_STEP" >> "$GITHUB_OUTPUT"
 

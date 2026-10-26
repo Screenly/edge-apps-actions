@@ -142,6 +142,15 @@ class PrepareTest(ScriptTestCase):
         self.assertIn("has_build_step=true", self.github_output.read_text())
         self.assertFalse((self.dir / ".ignore").exists())
 
+    def test_unreadable_package_json_fails(self):
+        for content in ["{not json", '{"scripts": "build"}']:
+            with self.subTest(content=content):
+                (self.dir / "package.json").write_text(content)
+                result = self.update()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("Could not read scripts.build", result.stdout)
+                self.assertNotIn("has_build_step", self.github_output.read_text())
+
     def test_plain_html_app_ignores_repo_internals(self):
         (self.dir / "package.json").write_text(json.dumps({"scripts": {"lint": "eslint"}}))
         (self.dir / ".ignore").write_text("docs/\n.git/")
